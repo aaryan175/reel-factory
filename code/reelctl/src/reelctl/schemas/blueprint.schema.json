@@ -1,0 +1,140 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://local.reelctl/schemas/blueprint.schema.json",
+  "title": "locked reference blueprint",
+  "type": "object",
+  "required": [
+    "schema_version",
+    "reference_sha256",
+    "reference_lock_recipe_hash",
+    "all_frames_board_sha256",
+    "clock",
+    "picture_boundaries_after",
+    "hard_cuts_after",
+    "boundary_provenance",
+    "picture_blocks",
+    "caption_layers",
+    "effect_layers",
+    "all_frames_reviewed",
+    "status",
+    "sha256_contract",
+    "signature"
+  ],
+  "properties": {
+    "schema_version": {"const": 1},
+    "status": {"const": "LOCKED"},
+    "reference_sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "reference_lock_recipe_hash": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "all_frames_board_sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "clock": {
+      "type": "object",
+      "required": [
+        "coded_width",
+        "coded_height",
+        "width",
+        "height",
+        "rotation",
+        "sample_aspect_ratio",
+        "fps",
+        "time_base",
+        "frame_count",
+        "pts_start",
+        "pts_step",
+        "pts",
+        "duration_ts"
+      ],
+      "properties": {
+        "coded_width": {"type": "integer", "minimum": 1},
+        "coded_height": {"type": "integer", "minimum": 1},
+        "width": {"type": "integer", "minimum": 2},
+        "height": {"type": "integer", "minimum": 2},
+        "rotation": {"enum": [0, 90, 180, 270]},
+        "sample_aspect_ratio": {"type": "string", "pattern": "^[1-9][0-9]*:[1-9][0-9]*$"},
+        "fps": {"type": "string", "pattern": "^[1-9][0-9]*/[1-9][0-9]*$"},
+        "time_base": {"type": "string", "pattern": "^[1-9][0-9]*/[1-9][0-9]*$"},
+        "frame_count": {"type": "integer", "minimum": 1},
+        "pts_start": {"const": 0},
+        "pts_step": {"type": ["integer", "null"], "minimum": 1},
+        "pts": {"type": "array", "minItems": 1, "items": {"type": "integer", "minimum": 0}},
+        "duration_ts": {"type": "integer", "minimum": 0}
+      },
+      "additionalProperties": false
+    },
+    "picture_boundaries_after": {
+      "type": "array",
+      "items": {"type": "integer", "minimum": 0},
+      "uniqueItems": true
+    },
+    "hard_cuts_after": {
+      "type": "array",
+      "items": {"type": "integer", "minimum": 0},
+      "uniqueItems": true
+    },
+    "boundary_provenance": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["after_frame", "kind", "evidence"],
+        "properties": {
+          "after_frame": {"type": "integer", "minimum": 0},
+          "kind": {"enum": ["hard_cut", "held_transition", "effect_state", "reframe", "other_picture_state"]},
+          "evidence": {"type": "string", "minLength": 1}
+        },
+        "additionalProperties": false
+      }
+    },
+    "picture_blocks": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "required": [
+          "id",
+          "start_frame",
+          "end_frame_exclusive",
+          "frames",
+          "role",
+          "reference_observation",
+          "transition_from_previous",
+          "evidence_frames"
+        ],
+        "properties": {
+          "id": {"type": "string", "pattern": "^p[0-9]{3,}$"},
+          "start_frame": {"type": "integer", "minimum": 0},
+          "end_frame_exclusive": {"type": "integer", "minimum": 1},
+          "frames": {"type": "integer", "minimum": 1},
+          "role": {"type": "string", "minLength": 1},
+          "repeat_group": {"type": "string", "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]{0,63}$"},
+          "reference_observation": {"type": "string", "minLength": 1},
+          "transition_from_previous": {
+            "enum": ["opening", "hard_cut", "held_transition", "effect_state", "reframe", "other_picture_state"]
+          },
+          "evidence_frames": {
+            "type": "array",
+            "minItems": 1,
+            "items": {"type": "integer", "minimum": 0},
+            "uniqueItems": true
+          }
+        },
+        "additionalProperties": false
+      }
+    },
+    "caption_layers": {"type": "array", "items": {"type": "object"}},
+    "effect_layers": {"type": "array", "items": {"type": "object"}},
+    "all_frames_reviewed": {"const": true},
+    "sha256_contract": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "signature": {
+      "type": "object",
+      "required": ["algorithm", "purpose", "key_id", "value", "key_location"],
+      "properties": {
+        "algorithm": {"const": "HMAC-SHA256"},
+        "purpose": {"const": "blueprint-lock-v1"},
+        "key_id": {"type": "string", "pattern": "^[0-9a-f]{16}$"},
+        "value": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+        "key_location": {"type": "string", "minLength": 1}
+      },
+      "additionalProperties": false
+    }
+  },
+  "additionalProperties": false
+}

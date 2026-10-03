@@ -1,0 +1,113 @@
+{% extends "base.html" %}
+{% set active = 'board' %}
+{% block title %}Reel {{ '%02d' % p.seq }} — Process — Reel Deck{% endblock %}
+{% block content %}
+
+<div class="pagehead" style="gap:20px; align-items:center;">
+  <h1 style="display:flex; align-items:center; gap:14px;">
+    <span style="font-size:44px; color:var(--amber);">{{ '%02d' % p.seq }}</span>
+    <span>PROCESS — the whole build, end to end</span>
+  </h1>
+  <span class="stamp big amber">{{ p.version or '—' }}</span>
+  <span class="sub mono">{{ p.review_state }}{% if p.shortcode %} · {{ p.shortcode }}{% endif %} · <a href="/row/{{ p.seq }}">← back to the review page</a></span>
+</div>
+
+<div class="notice info" style="margin-bottom:16px;">
+  <span>Everything on this page is read straight from disk: the project folder, the registry row and the bus receipts. Nothing here can send, publish or change anything. Click any sheet to open it full size.</span>
+</div>
+
+<h2 class="sub" style="margin:18px 0 8px;">THE PIPELINE (one path, every render)</h2>
+<div class="pipe">
+  {% for name, what in p.pipeline %}
+  <div class="pipe-step"><b>{{ loop.index }}. {{ name }}</b><span>{{ what }}</span></div>
+  {% endfor %}
+</div>
+
+<h2 class="sub" style="margin:22px 0 8px;">TIMELINE</h2>
+{% if p.timeline %}
+<table class="tbl">
+  <thead><tr><th>when</th><th>what</th><th>file</th><th>note</th></tr></thead>
+  <tbody>
+  {% for e in p.timeline %}
+    <tr class="tl-{{ e.kind }}"><td class="mono">{{ e.when }}</td><td><span class="stamp {% if e.kind == 'render' %}{% if 'REFUSED' in e.note %}bad{% else %}good{% endif %}{% else %}amber{% endif %}">{{ e.kind }}</span></td><td class="mono">{{ e.label }}</td><td>{{ e.note }}</td></tr>
+  {% endfor %}
+  </tbody>
+</table>
+{% else %}<p class="sub">No project folder on disk for this row (is the workbench drive mounted?).</p>{% endif %}
+
+<h2 class="sub" style="margin:22px 0 8px;">1 · REFERENCE</h2>
+{% if p.reference and p.reference.path %}
+<div class="grid2">
+  <video controls preload="metadata" style="max-width:100%; background:#000;" src="/media?p={{ p.reference.path | urlencode }}"></video>
+  <div class="mono small">{{ p.reference.path }}{% if p.reference.probe %}<br>{{ p.reference.probe }}{% endif %}</div>
+</div>
+{% else %}<p class="sub">No reference file found.</p>{% endif %}
+
+{% if p.study %}
+<h2 class="sub" style="margin:22px 0 8px;">2 · STUDY (brain/)</h2>
+<div class="grid2">
+  <div>
+    <b>Cut grid</b>{% if p.study.shots %} — {{ p.study.shots | length }} shots
+    <table class="tbl small"><thead><tr><th>shot</th><th>in</th><th>out</th><th>frames</th><th>character</th></tr></thead><tbody>
+    {% for s in p.study.shots %}<tr><td class="mono">{{ s.slot }}</td><td class="mono">{{ s.in }}</td><td class="mono">{{ s.out }}</td><td class="mono">{{ s.frames }}</td><td>{{ s.character }}</td></tr>{% endfor %}
+    </tbody></table>{% else %} — none{% endif %}
+  </div>
+  <div>
+    <b>Caption states</b>{% if p.study.states %} — {{ p.study.states | length }} states
+    <table class="tbl small"><thead><tr><th>id</th><th>frames</th><th>text</th><th>parts (box · ink · envelope)</th></tr></thead><tbody>
+    {% for st in p.study.states %}<tr><td class="mono">{{ st.id }}</td><td class="mono">{{ st.in }}–{{ st.out }}</td><td>{{ st.text }}</td><td class="mono small">{% for pt in st.parts %}{{ pt.text }} {{ pt.box }} {{ pt.ink }}{% if pt.env %} env {{ pt.env }}{% endif %}<br>{% endfor %}</td></tr>{% endfor %}
+    </tbody></table>{% else %} — none{% endif %}
+  </div>
+</div>
+<div style="margin-top:10px;"><b>Brain files</b>: <span class="mono small">{% for f in p.study.files %}{% if f.media %}<a href="/media?p={{ f.media | urlencode }}" target="_blank" rel="noopener">{{ f.name }}</a>{% else %}{{ f.name }}{% endif %} ({{ f.size }}b){% if not loop.last %} · {% endif %}{% endfor %}</span></div>
+{% if p.study.walls %}
+<details style="margin-top:10px;" open><summary><b>WALLS.md — what the footage cannot give (stated plainly)</b></summary><pre class="pre">{{ p.study.walls }}</pre></details>
+{% endif %}
+{% endif %}
+
+<h2 class="sub" style="margin:22px 0 8px;">3 · CASTS ({{ p.casts | length }})</h2>
+{% for c in p.casts %}
+<details class="block" {% if loop.last %}open{% endif %}>
+  <summary><b class="mono">{{ c.name }}</b> <span class="sub">{{ c.mtime }}</span>{% if c.partial %} <span class="stamp amber">agent proposal</span>{% endif %} — {{ c.change }}</summary>
+  <table class="tbl small"><thead><tr><th>slot</th><th>master</th><th>in</th><th>crop</th><th>owner</th><th>why</th><th>residual</th></tr></thead><tbody>
+  {% for s in c.slots %}<tr><td class="mono">{{ s.slot }}</td><td class="mono">{{ s.stem }}</td><td class="mono">{{ s.in_s }}</td><td class="mono small">{{ s.crop if s.crop else '—' }}</td><td>{{ s.owner or '' }}</td><td class="small">{{ (s.why or '')[:300] }}</td><td class="small">{{ s.residual or '' }}</td></tr>{% endfor %}
+  </tbody></table>
+</details>
+{% endfor %}
+
+<h2 class="sub" style="margin:22px 0 8px;">4 · RENDERS ({{ p.renders | length }}) — each one judged by the gate, then by eye</h2>
+{% for r in p.renders %}
+<details class="block" {% if loop.last %}open{% endif %}>
+  <summary><b class="mono">{{ r.name }}</b> <span class="sub">{{ r.mtime }}</span>
+    {% if r.refusal %}<span class="stamp bad">REFUSED</span> {{ r.refusal }}{% elif r.ok %}<span class="stamp good">CLEAN</span> {{ r.frames }} frames · {{ '%.2f' % ((r.bytes or 0) / 1000000) }} MB · crf {{ r.crf }} · captions: {{ r.devices }}{% else %}<span class="stamp">no report</span>{% endif %}
+  </summary>
+  {% if r.deliverables %}<p class="mono small">deliverable: {% for d in r.deliverables %}<a href="/media?p={{ d | urlencode }}" target="_blank" rel="noopener">{{ d.rsplit('/', 1)[-1] }}</a> {% endfor %}</p>{% endif %}
+  {% if r.shots %}
+  <table class="tbl small"><thead><tr><th>shot</th><th>master</th><th>in</th><th>crop</th><th>grade</th><th>tone</th><th>pull γ</th><th>luma ours / ref</th></tr></thead><tbody>
+  {% for s in r.shots %}<tr><td class="mono">{{ s.slot }}</td><td class="mono">{{ s.stem }}</td><td class="mono">{{ s.in_s }}</td><td>{{ '✓' if s.crop else '' }}</td><td>{{ s.grade_mode or (s.mood_eq and 'mood_eq') or '' }}</td><td class="mono">{{ s.tone if s.tone is not none else '' }}</td><td class="mono">{{ s.pull if s.pull else '' }}</td><td class="mono">{% if s.luma_ours is not none %}{{ s.luma_ours }} / {{ s.luma_ref }}{% endif %}</td></tr>{% endfor %}
+  </tbody></table>
+  {% endif %}
+  {% for sh in r.sheets %}
+  <div class="sheet"><div class="sub">{{ sh.label }} <span class="mono small">{{ sh.rel }}</span></div>
+    <a href="/media?p={{ sh.path | urlencode }}" target="_blank" rel="noopener"><img loading="lazy" src="/media?p={{ sh.path | urlencode }}" alt="{{ sh.label }}"></a></div>
+  {% endfor %}
+  {% if r.log %}<p class="mono small"><a href="/media?p={{ (r.log ~ '') | urlencode }}" target="_blank" rel="noopener">render.log</a></p>{% endif %}
+</details>
+{% endfor %}
+
+<h2 class="sub" style="margin:22px 0 8px;">5 · RECEIPTS (the bus)</h2>
+<table class="tbl small"><thead><tr><th>when</th><th>receipt</th><th>title</th><th>last ACK / CALL</th></tr></thead><tbody>
+{% for rc in p.receipts if not rc.test %}
+<tr><td class="mono">{{ rc.mtime }}</td><td class="mono"><a href="/media?p={{ rc.path | urlencode }}" target="_blank" rel="noopener">{{ rc.name }}</a></td><td>{{ rc.title }}</td><td class="small">{% for a in rc.acks %}{{ a[:160] }}<br>{% endfor %}</td></tr>
+{% endfor %}
+</tbody></table>
+
+<h2 class="sub" style="margin:22px 0 8px;">6 · REGISTRY ROW (what the factory recorded)</h2>
+{% for e in p.registry %}
+<details class="block"><summary><b class="mono">{{ e.key }}</b> <span class="sub">{{ e.ts }}</span> — {{ e.summary.get('outcome') or e.summary.get('gate') or e.summary.get('lane') or '' }}</summary>
+  <table class="tbl small"><tbody>{% for k, v in e.summary.items() %}<tr><td class="mono">{{ k }}</td><td>{{ v }}</td></tr>{% endfor %}</tbody></table>
+  {% if e.nested %}<pre class="pre">{{ e.nested }}</pre>{% endif %}
+</details>
+{% endfor %}
+<p class="sub" style="margin-top:10px;">Row state now: <b>{{ p.review_state }}</b> · version {{ p.version }} · updated {{ p.updated }}</p>
+{% endblock %}

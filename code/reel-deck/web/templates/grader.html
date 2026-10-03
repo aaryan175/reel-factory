@@ -1,0 +1,92 @@
+{% extends "base.html" %}
+{% set active = 'grader' %}
+{% block title %}Grade — Reel Deck{% endblock %}
+{% block content %}
+
+<div class="pagehead">
+  <h1>Grade the footage</h1>
+  <span class="sub">The clip plays through; tap or hold a grade while the good part plays. Every grade is saved on the machine the moment you make it — not in this phone.</span>
+</div>
+
+<div class="grader" id="grader">
+  <div class="g-count mono" id="g-count">loading the library…</div>
+  <div class="g-disk mono" id="g-disk">on disk this session: nothing yet</div>
+  <div class="g-progress"><div class="g-bar" id="g-bar"></div></div>
+
+  <div class="g-stage">
+    <video id="g-video" playsinline muted autoplay controls></video>
+    <video id="g-next" class="g-preload" playsinline muted preload="auto" aria-hidden="true"></video>
+    <div class="g-saved" id="g-saved" hidden></div>
+    <div class="g-loop mono" id="g-loop" hidden></div>
+  </div>
+  <div class="g-timeline" id="g-timeline" aria-label="the clip's 5-second pieces; tap one to jump there">
+    <div class="g-head" id="g-head" aria-hidden="true"></div>
+  </div>
+
+  <div class="g-info">
+    <div class="g-stem"><span class="mono" id="g-stem">—</span> <span class="mono g-dur" id="g-dur"></span></div>
+    <div class="pills g-pills" id="g-pills"></div>
+    <div class="g-note" id="g-note"></div>
+  </div>
+
+  <div class="g-keys">
+    <button class="btn g-big good" data-grade="HERO" type="button"><kbd>1</kbd> HERO<small>me, face, good · then next section</small></button>
+    <button class="btn g-big" data-grade="BROLL" type="button"><kbd>2</kbd> B-ROLL<small>behind text · then next section</small></button>
+    <button class="btn g-big bad" data-grade="NEVER" type="button"><kbd>3</kbd> NEVER<small>never cast · then next section</small></button>
+  </div>
+  <div class="g-keys g-keys-rest">
+    <button class="btn good" data-rest="HERO" type="button"><kbd>7</kbd> HERO rest of video</button>
+    <button class="btn" data-rest="BROLL" type="button"><kbd>8</kbd> B-ROLL rest of video</button>
+    <button class="btn bad" data-rest="NEVER" type="button"><kbd>9</kbd> NEVER rest of video</button>
+  </div>
+  <div class="g-keys g-keys-row">
+    <button class="btn" data-ident="ME" type="button"><kbd>M</kbd> This is me</button>
+    <button class="btn" data-ident="NOTME" type="button"><kbd>N</kbd> Not me</button>
+    <button class="btn" id="g-prev-section" type="button"><kbd>A</kbd> Prev section</button>
+    <button class="btn" id="g-next-section" type="button"><kbd>Space</kbd> Next section</button>
+    <button class="btn" id="g-back" type="button"><kbd>←</kbd> Prev video</button>
+    <button class="btn" id="g-skip" type="button"><kbd>S</kbd> Skip video</button>
+  </div>
+  <div class="g-keys g-keys-nav">
+    <button class="btn primary" id="g-next-clip" type="button"><kbd>→</kbd> Next video</button>
+    <button class="btn" id="g-rate" type="button" title="key 0 cycles the speed">Speed 1.5×</button>
+  </div>
+
+  <div class="g-jumps">
+    <button class="btn small" data-jump="new" type="button">Jump to NEW</button>
+    <button class="btn small" data-jump="untagged" type="button">Jump to UNTAGGED</button>
+    <button class="btn small" data-jump="face" type="button">Jump to FACE</button>
+    <button class="btn small" data-jump="noface" type="button">Jump to NO-FACE</button>
+    <button class="btn small" data-jump="ungraded" type="button">First ungraded</button>
+    <button class="btn small" id="g-bulk" type="button">Mark all remaining NO-FACE as B-ROLL</button>
+  </div>
+  <div class="notice info g-confirm" id="g-confirm" hidden>
+    <span id="g-confirm-text"></span>
+    <button class="btn small primary" id="g-confirm-yes" type="button">Yes, mark them</button>
+    <button class="btn small" id="g-confirm-no" type="button">Cancel</button>
+  </div>
+
+  <section class="panelbox g-help">
+    <h2>Keys (laptop) — grade without touching the mouse</h2>
+    <p>A <b>video</b> is one file from the library. It is cut into <b>sections</b> of about 5 seconds (equal cuts, so a 37 s video is 7 sections of 5.3 s). A grade is for one section. The bar under the video has one cell per section — grey ungraded, green HERO, blue B-ROLL, red NEVER — with the white line as the playhead; click a cell to jump there.</p>
+    <table class="mono g-keys">
+      <tr><td><kbd>1</kbd> <kbd>2</kbd> <kbd>3</kbd></td><td>HERO / B-ROLL / NEVER for the section playing, then <b>straight to the next section</b>. Hold the key to blast through sections at ~6 a second.</td></tr>
+      <tr><td><kbd>Space</kbd> or <kbd>D</kbd></td><td>next section, no grade (leave it grey). <kbd>A</kbd> previous section.</td></tr>
+      <tr><td><kbd>7</kbd> <kbd>8</kbd> <kbd>9</kbd></td><td>HERO / B-ROLL / NEVER for this section and every section after it, then the next video.</td></tr>
+      <tr><td><kbd>S</kbd> or <kbd>→</kbd></td><td>next video that still needs grading. <kbd>←</kbd> previous video.</td></tr>
+      <tr><td><kbd>M</kbd> <kbd>N</kbd></td><td>ME / NOT ME: identity ruling for the whole video (stands on its own, no grade needed).</td></tr>
+      <tr><td><kbd>0</kbd></td><td>speed 1× → 1.5× → 2× → 3× → 4×.</td></tr>
+    </table>
+    <p>A video that still has grey sections <b>loops</b> until you grade or skip it; a fully graded one moves on by itself. Grey sections are fine: the factory picks HERO first, avoids NEVER, and only uses ungraded sections when nothing better exists.</p>
+    <ul>
+      <li><span class="stamp green">HERO</span> This is the featured person, face showing, good shot. It joins the settled pool and is the first pick for every shot where the reference shows a person.</li>
+      <li><span class="stamp blue">B-ROLL</span> Fine as a background. Used only behind captions, where the reference shows no person. No face needed.</li>
+      <li><span class="stamp red">NEVER</span> Never cast again, in any slot.</li>
+      <li><span class="stamp amber">ME</span> / <span class="stamp grey">NOT ME</span> Identity for the whole video, by its number.</li>
+    </ul>
+    <p><b>NO FACE</b> means the face scan found nobody facing the camera. It can still be the featured person from behind or far away — watch before you grade. <b>Mark all remaining NO-FACE as B-ROLL</b> grades whole videos, and only ones with no grade on any section yet; a section grade always outranks a whole-video grade. If a tap shows red <b>NOT saved</b>, it did not land: tap it again.</p>
+  </section>
+</div>
+
+{% endblock %}
+{% block scripts %}<script src="/static/js/grader.js?v=1"></script>{% endblock %}

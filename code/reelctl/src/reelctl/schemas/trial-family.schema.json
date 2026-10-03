@@ -1,0 +1,159 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://local.reelctl/schemas/trial-family.schema.json",
+  "title": "Reference-locked reel variant family",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "family_id",
+    "family_state",
+    "mode",
+    "master",
+    "policy",
+    "variants"
+  ],
+  "properties": {
+    "schema_version": {"const": 1},
+    "family_id": {"type": "string", "pattern": "^[a-z0-9][a-z0-9-]{2,127}$"},
+    "family_state": {"enum": ["PLANNED", "LOCAL_REVIEW_READY"]},
+    "mode": {"const": "trial-variant-family"},
+    "master": {"$ref": "#/$defs/master"},
+    "policy": {"$ref": "#/$defs/policy"},
+    "variants": {
+      "type": "array",
+      "minItems": 5,
+      "maxItems": 100,
+      "items": {"$ref": "#/$defs/variant"}
+    }
+  },
+  "$defs": {
+    "sha256": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{64}$"
+    },
+    "slot": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "slot_id",
+        "role",
+        "frames",
+        "source_sha256",
+        "source_start_frame",
+        "source_end_frame_exclusive"
+      ],
+      "properties": {
+        "slot_id": {"type": "string", "pattern": "^[A-Za-z][A-Za-z0-9_-]{1,31}$"},
+        "role": {"type": "string", "minLength": 1},
+        "frames": {"type": "integer", "minimum": 1},
+        "source_path": {"type": "string", "minLength": 1},
+        "source_sha256": {"$ref": "#/$defs/sha256"},
+        "source_start_frame": {"type": "integer", "minimum": 0},
+        "source_end_frame_exclusive": {"type": "integer", "minimum": 1}
+      }
+    },
+    "master": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["reel_id", "selection_sha256", "slots"],
+      "properties": {
+        "reel_id": {"type": "string", "minLength": 1},
+        "selection_sha256": {"$ref": "#/$defs/sha256"},
+        "slots": {
+          "type": "array",
+          "minItems": 1,
+          "items": {"$ref": "#/$defs/slot"}
+        }
+      }
+    },
+    "policy": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "minimum_variants",
+        "opening_slot_id",
+        "minimum_changed_video_slots",
+        "minimum_changed_visual_ratio",
+        "unique_opening_source_per_variant",
+        "locked_layers",
+        "non_counting_changes"
+      ],
+      "properties": {
+        "minimum_variants": {"type": "integer", "minimum": 5, "maximum": 100},
+        "opening_slot_id": {"type": "string", "minLength": 1},
+        "minimum_changed_video_slots": {"type": "integer", "minimum": 2},
+        "minimum_changed_visual_ratio": {"type": "number", "minimum": 0.3, "maximum": 1.0},
+        "unique_opening_source_per_variant": {"const": true},
+        "locked_layers": {
+          "type": "array",
+          "minItems": 7,
+          "uniqueItems": true,
+          "items": {
+            "enum": [
+              "frame_clock",
+              "cut_clock",
+              "audio",
+              "caption_timing",
+              "typography",
+              "effects",
+              "ending"
+            ]
+          }
+        },
+        "non_counting_changes": {
+          "type": "array",
+          "minItems": 5,
+          "uniqueItems": true,
+          "items": {
+            "enum": [
+              "container_metadata",
+              "encode_settings",
+              "file_name",
+              "cover_only",
+              "public_caption_only"
+            ]
+          }
+        }
+      }
+    },
+    "review": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "status",
+        "render_sha256",
+        "technical_qc",
+        "visual_qc",
+        "normal_speed_full_watch"
+      ],
+      "properties": {
+        "status": {"enum": ["PLANNED", "LOCAL_REVIEW_READY"]},
+        "render_sha256": {
+          "oneOf": [
+            {"$ref": "#/$defs/sha256"},
+            {"type": "null"}
+          ]
+        },
+        "technical_qc": {"enum": ["PENDING", "PASS", "FAIL"]},
+        "visual_qc": {"enum": ["PENDING", "PASS", "FAIL", "BLOCKED"]},
+        "normal_speed_full_watch": {"type": "boolean"}
+      }
+    },
+    "variant": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["variant_id", "primary_test_variable", "slots", "review"],
+      "properties": {
+        "variant_id": {"type": "string", "pattern": "^[A-Za-z][A-Za-z0-9_-]{1,31}$"},
+        "primary_test_variable": {"type": "string", "minLength": 1},
+        "slots": {
+          "type": "array",
+          "minItems": 1,
+          "items": {"$ref": "#/$defs/slot"}
+        },
+        "review": {"$ref": "#/$defs/review"}
+      }
+    }
+  }
+}

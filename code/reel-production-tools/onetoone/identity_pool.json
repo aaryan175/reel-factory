@@ -1,0 +1,12 @@
+{
+  "schema_version": 1,
+  "law": "Identity and blacklist are code, not prose (L0052). An identity slot may only use a clip stem in settled_pool. No slot may use a stem in blacklist_full, or an in-point inside blacklist_spans. Change only on a human ruling by clip number, and update the test in the same change.",
+  "settled_pool": [],
+  "settled_pool_sets": {},
+  "blacklist_full": [],
+  "blacklist_spans": [],
+  "unruled": [],
+  "not_operator": [],
+  "operator_confirmed": [],
+  "sources": {}
+}

@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>Label</key>
+	<string>com.reelfactory.reel-studio-daemon</string>
+
+	<!-- The orchestrator. Separate service from the app so the board survives a daemon
+	     crash and a wedged render never takes the UI with it. -->
+	<key>ProgramArguments</key>
+	<array>
+		<string>__HOME__/.local/bin/reelctl</string>
+		<string>--projects-root</string>
+		<string>__REEL_FACTORY_HOME__</string>
+		<string>studio</string>
+		<string>daemon</string>
+	</array>
+
+	<!-- cwd is the factory root so a headless judgment worker loads reel-production's
+	     CLAUDE.md invariants (§6.3). -->
+	<key>WorkingDirectory</key>
+	<string>__REEL_FACTORY_HOME__</string>
+
+	<key>EnvironmentVariables</key>
+	<dict>
+		<!-- Same explicit PATH as the app: the daemon shells out to reelctl, which shells
+		     out to ffmpeg/ffprobe, and it refuses to start work when reelctl is not on
+		     this path (daemon.preflight). -->
+		<key>PATH</key>
+		<string>__HOME__/.local/bin:/opt/homebrew/bin:/usr/bin:/bin</string>
+		<key>PYTHONUNBUFFERED</key>
+		<string>1</string>
+	</dict>
+
+	<key>RunAtLoad</key>
+	<true/>
+	<key>KeepAlive</key>
+	<true/>
+	<!-- Longer than the app's: this process starts renders. If it is dying repeatedly the
+	     right behaviour is to restart slowly enough that the log stays readable, not to
+	     hammer ffmpeg back into existence every ten seconds. -->
+	<key>ThrottleInterval</key>
+	<integer>30</integer>
+	<!-- Standard, not Background: Background asks the kernel to throttle I/O, which is
+	     exactly wrong for a process whose children are ffmpeg. -->
+	<key>ProcessType</key>
+	<string>Standard</string>
+
+	<key>StandardOutPath</key>
+	<string>__REEL_FACTORY_HOME__/.studio/logs/reel-studio-daemon.out.log</string>
+	<key>StandardErrorPath</key>
+	<string>__REEL_FACTORY_HOME__/.studio/logs/reel-studio-daemon.err.log</string>
+</dict>
+</plist>

@@ -1,0 +1,185 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://local.reelctl/schemas/assets.schema.json",
+  "title": "exact overlay assets",
+  "$defs": {
+    "rgba": {
+      "type": "array",
+      "prefixItems": [
+        {"type": "integer", "minimum": 0, "maximum": 255},
+        {"type": "integer", "minimum": 0, "maximum": 255},
+        {"type": "integer", "minimum": 0, "maximum": 255},
+        {"type": "integer", "minimum": 0, "maximum": 255}
+      ],
+      "items": false
+    },
+    "xy": {
+      "type": "array",
+      "prefixItems": [{"type": "number"}, {"type": "number"}],
+      "items": false
+    },
+    "font_identity": {
+      "type": "object",
+      "required": [
+        "face_index", "faces_in_file", "family", "subfamily", "full_name", "postscript_name",
+        "font_revision", "units_per_em", "glyph_count", "cmap_sha256", "variation_axes",
+        "available_features", "rasterizer", "pillow_version"
+      ],
+      "properties": {
+        "face_index": {"type": "integer", "minimum": 0},
+        "faces_in_file": {"type": "integer", "minimum": 1},
+        "family": {"type": "string"},
+        "subfamily": {"type": "string"},
+        "full_name": {"type": "string"},
+        "postscript_name": {"type": "string"},
+        "font_revision": {"type": "string", "pattern": "^[0-9]+\\.[0-9]{6}$"},
+        "units_per_em": {"type": "integer", "minimum": 1},
+        "glyph_count": {"type": "integer", "minimum": 1},
+        "cmap_sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+        "variation_axes": {"type": "array"},
+        "available_features": {"type": "array", "items": {"type": "string"}, "uniqueItems": true},
+        "rasterizer": {"const": "pillow-freetype"},
+        "pillow_version": {"type": "string", "minLength": 1}
+      },
+      "additionalProperties": false
+    }
+  },
+  "type": "object",
+  "required": ["schema_version", "typography_layers", "effect_layers"],
+  "properties": {
+    "schema_version": {"const": 1},
+    "status": {"enum": ["DRAFT", "PASS"]},
+    "typography_layers": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["id", "text", "proof", "start_frame", "end_frame_exclusive"],
+        "properties": {
+          "id": {"type": "string", "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]{0,63}$"},
+          "text": {"type": "string", "minLength": 1},
+          "proof": {"enum": ["exact_font", "traced_reference_glyph"]},
+          "start_frame": {"type": "integer", "minimum": 0},
+          "end_frame_exclusive": {"type": "integer", "minimum": 1},
+          "font_path": {"type": "string"},
+          "font_sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+          "face_index": {"type": "integer", "minimum": 0},
+          "font_identity": {"$ref": "#/$defs/font_identity"},
+          "font_size": {"type": "integer", "minimum": 1},
+          "plate_path": {"type": "string"},
+          "plate_sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+          "source_frame": {"type": "integer", "minimum": 0},
+          "extraction_roi": {
+            "type": "array",
+            "prefixItems": [
+              {"type": "integer", "minimum": 0},
+              {"type": "integer", "minimum": 0},
+              {"type": "integer", "minimum": 1},
+              {"type": "integer", "minimum": 1}
+            ],
+            "items": false
+          },
+          "provenance_receipt_path": {"type": "string"},
+          "provenance_receipt_sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+          "reference_match": {
+            "type": "object",
+            "required": ["schema_version", "status", "method", "reference_path", "reference_sha256", "evidence", "layer_recipe_hash", "signature"],
+            "properties": {
+              "schema_version": {"const": 1},
+              "status": {"const": "PASS"},
+              "method": {"enum": ["original_asset_provenance", "silhouette_comparison"]},
+              "reference_path": {"type": "string"},
+              "reference_sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+              "evidence": {"type": "string", "minLength": 1},
+              "asset_origin": {"type": "string"},
+              "reference_mask_path": {"type": "string"},
+              "reference_mask_sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+              "candidate_mask_path": {"type": "string"},
+              "candidate_mask_sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+              "silhouette_iou": {"type": "number", "minimum": 0.995, "maximum": 1},
+              "layer_recipe_hash": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+              "signature": {"type": "object"}
+            },
+            "additionalProperties": false
+          },
+          "center_xy": {"$ref": "#/$defs/xy"},
+          "top_left_xy": {"$ref": "#/$defs/xy"},
+          "tracking_px": {"type": "number"},
+          "scale_xy": {"$ref": "#/$defs/xy"},
+          "fill_rgba": {"$ref": "#/$defs/rgba"},
+          "fill_gradient": {
+            "type": "object",
+            "required": ["axis", "start_rgba", "end_rgba"],
+            "properties": {
+              "axis": {"enum": ["vertical", "horizontal"]},
+              "start_rgba": {"$ref": "#/$defs/rgba"},
+              "end_rgba": {"$ref": "#/$defs/rgba"}
+            },
+            "additionalProperties": false
+          },
+          "opacity": {"type": "integer", "minimum": 0, "maximum": 255},
+          "stroke_width": {"type": "integer", "minimum": 0},
+          "stroke_rgba": {"$ref": "#/$defs/rgba"},
+          "shadow": {
+            "type": "object",
+            "properties": {
+              "blur_radius": {"type": "number", "minimum": 0},
+              "color_rgba": {"$ref": "#/$defs/rgba"},
+              "offset_xy": {"$ref": "#/$defs/xy"}
+            },
+            "additionalProperties": false
+          }
+        },
+        "allOf": [
+          {
+            "if": {"properties": {"proof": {"const": "exact_font"}}, "required": ["proof"]},
+            "then": {"required": ["font_path", "font_sha256", "face_index", "font_identity", "reference_match"]}
+          },
+          {
+            "if": {"properties": {"proof": {"const": "traced_reference_glyph"}}, "required": ["proof"]},
+            "then": {
+              "required": [
+                "plate_path", "plate_sha256", "source_frame", "extraction_roi",
+                "provenance_receipt_path", "provenance_receipt_sha256"
+              ]
+            }
+          }
+        ],
+        "additionalProperties": false
+      }
+    },
+    "effect_layers": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["id", "proof", "start_frame", "end_frame_exclusive", "provenance_receipt_path", "provenance_receipt_sha256"],
+        "properties": {
+          "id": {"type": "string", "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]{0,63}$"},
+          "proof": {
+            "enum": ["reference_extracted_plate", "reference_rebuilt_exact", "effect_source_hash_locked"]
+          },
+          "start_frame": {"type": "integer", "minimum": 0},
+          "end_frame_exclusive": {"type": "integer", "minimum": 1},
+          "plate_path": {"type": "string"},
+          "plate_sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+          "sequence_pattern": {"type": "string"},
+          "source_frame": {"type": "integer", "minimum": 0},
+          "source_sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+          "provenance_receipt_path": {"type": "string"},
+          "provenance_receipt_sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"}
+        },
+        "additionalProperties": false
+      }
+    },
+    "overlay_sequence": {"type": ["string", "null"]},
+    "overlay_recipe_hash": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "overlay_receipt_sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "validation": {"type": "object"}
+  },
+  "allOf": [
+    {
+      "if": {"properties": {"overlay_sequence": {"type": "string"}}, "required": ["overlay_sequence"]},
+      "then": {"required": ["overlay_recipe_hash", "overlay_receipt_sha256"]}
+    }
+  ],
+  "additionalProperties": false
+}

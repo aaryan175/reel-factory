@@ -1,0 +1,70 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://local.reelctl/schemas/feasibility.schema.json",
+  "title": "reference role feasibility",
+  "type": "object",
+  "required": ["schema_version", "status", "blocks"],
+  "properties": {
+    "schema_version": {"const": 1},
+    "status": {"enum": ["DRAFT", "PASS", "BLOCKED"]},
+    "blocks": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "required": ["block_id", "reference_role", "coverage", "evidence"],
+        "properties": {
+          "block_id": {"type": "string", "pattern": "^p[0-9]{3,}$"},
+          "reference_role": {"type": "string", "minLength": 1},
+          "coverage": {
+            "enum": [
+              "PENDING_FULL_INVENTORY_REVIEW",
+              "exact_scene_available",
+              "role_equivalent_substitute",
+              "missing"
+            ]
+          },
+          "evidence": {"type": "string", "minLength": 1},
+          "evidence_clip_ids": {
+            "type": "array",
+            "items": {"type": "string", "minLength": 1},
+            "uniqueItems": true
+          },
+          "decision": {"type": "string", "minLength": 1}
+        },
+        "additionalProperties": false
+      }
+    },
+    "validation": {
+      "type": "object",
+      "required": [
+        "status",
+        "mode",
+        "blocks",
+        "exact_blocks",
+        "exact_coverage_ratio",
+        "minimum_exact_coverage",
+        "missing_blocks",
+        "substitution_blocks",
+        "decision_required",
+        "mode_switch_required",
+        "recommended_mode"
+      ],
+      "properties": {
+        "status": {"enum": ["PASS", "BLOCKED"]},
+        "mode": {"enum": ["reference-locked", "original-montage"]},
+        "blocks": {"type": "integer", "minimum": 1},
+        "exact_blocks": {"type": "array", "items": {"type": "string"}},
+        "exact_coverage_ratio": {"type": "number", "minimum": 0, "maximum": 1},
+        "minimum_exact_coverage": {"type": "number", "minimum": 0, "maximum": 1},
+        "missing_blocks": {"type": "array", "items": {"type": "string"}},
+        "substitution_blocks": {"type": "array", "items": {"type": "string"}},
+        "decision_required": {"type": "boolean"},
+        "mode_switch_required": {"type": "boolean"},
+        "recommended_mode": {"enum": ["reference-locked", "original-montage"]}
+      },
+      "additionalProperties": false
+    }
+  },
+  "additionalProperties": false
+}

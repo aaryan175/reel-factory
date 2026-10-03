@@ -1,0 +1,69 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>{% block title %}Reel Deck{% endblock %}</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Barlow:wght@400;500;600&family=Barlow+Condensed:wght@600;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="icon" type="image/svg+xml" href="/static/favicon.svg">
+<link rel="stylesheet" href="/static/css/deck.css?v=1">
+</head>
+<body>
+<div class="shell">
+  <aside class="rail">
+    <div class="wordmark"><span class="tally"></span>REEL DECK</div>
+    <small class="mono" style="letter-spacing:.22em; color:var(--faint); margin-bottom:6px;">FACTORY CONTROL ROOM</small>
+    <nav>
+      <a href="/" class="{% if active == 'board' %}active{% endif %}">Board</a>
+      {% if not editor %}
+      <a href="/make" class="{% if active == 'make' %}active{% endif %}">Make</a>
+      <a href="/now" class="{% if active == 'now' %}active{% endif %}">Now</a>
+      <a href="/grader" class="{% if active == 'grader' %}active{% endif %}">Grade</a>
+      {% endif %}
+      <a href="/help" class="{% if active == 'help' %}active{% endif %}">Help</a>
+    </nav>
+    {% if not editor %}
+    <div style="margin-top:18px; display:flex; flex-direction:column; gap:8px;">
+      <button class="btn" id="btn-continue" title="Tell the factory: carry on where you left off">▶ Nudge the factory</button>
+    </div>
+    {% endif %}
+    <div class="push"></div>
+    <div class="health" id="rail-health">
+      <b>factory bus</b> · receipts<br>
+      <span class="mono">writes are receipts only<br>posting stays with you<br>build {{ build }}</span>
+    </div>
+    {% if user %}
+    <div class="whoami">
+      <span class="who">{{ user.username }}</span>
+      <span class="stamp {% if user.role == 'EDITOR' %}grey{% else %}amber{% endif %}">{{ user.role }}</span>
+    </div>
+    {% endif %}
+    <form method="post" action="/logout" style="margin-top:12px;">
+      <button class="btn small" type="submit">Sign out</button>
+    </form>
+  </aside>
+  <main class="content">
+    <div id="notice" class="notice" hidden></div>
+    {% if editor and request.url.path == '/' %}
+    <div class="notice info" id="first-banner">
+      <span><b>New here?</b> Tap a card under <b>Needs you</b>. Pause on the frame, write your comment like chat, press Enter. Set the status pill to <b>Approved</b> or <b>Needs changes</b> when you've decided. The factory's replies land in the same thread. <a href="/help#howto-video"><b>Watch the walkthrough →</b></a></span>
+      <a class="btn small" href="/help" style="margin-left:10px;">How to review</a>
+      <button type="button" class="dismiss" aria-label="dismiss" onclick="this.parentNode.hidden=true;try{localStorage.setItem('deck.banner','1')}catch(e){}">✕</button>
+    </div>
+    <script>try{if(localStorage.getItem('deck.banner')==='1'){document.getElementById('first-banner').hidden=true;}}catch(e){}</script>
+    {% endif %}
+    {% block content %}{% endblock %}
+  </main>
+</div>
+<div class="toast" id="toast"></div>
+<script>
+// Report the browser's own JS errors to the Deck (with the user agent), so a phone we do not hold can tell us why a button died.
+window.addEventListener("error", function (e) { try { navigator.sendBeacon("/api/client-error", new Blob([JSON.stringify({message: e.message, source: e.filename, line: e.lineno, col: e.colno, url: location.href, stack: e.error && e.error.stack})], {type: "application/json"})); } catch (x) {} });
+window.addEventListener("unhandledrejection", function (e) { try { navigator.sendBeacon("/api/client-error", new Blob([JSON.stringify({message: "unhandledrejection: " + (e.reason && (e.reason.message || e.reason)), url: location.href, stack: e.reason && e.reason.stack})], {type: "application/json"})); } catch (x) {} });
+</script>
+<script src="/static/js/deck.js?v=1"></script>
+{% block scripts %}{% endblock %}
+</body>
+</html>

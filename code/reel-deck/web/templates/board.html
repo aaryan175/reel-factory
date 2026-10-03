@@ -1,0 +1,125 @@
+{% extends "base.html" %}
+{% from "_question.html" import question_card %}
+{% set active = 'board' %}
+{% block title %}Board — Reel Deck{% endblock %}
+{% block content %}
+
+<div class="pagehead">
+  <h1>Board</h1>
+  <span class="sub">
+    {% if board.factory %}
+    <span class="live{% if not board.factory.awake %} stale{% endif %}" style="display:inline-flex;" title="The chat-free factory daemon's heartbeat — orders from Make run even with every chat closed while this is awake.">
+      <span class="dot"></span>factory {% if board.factory.state == 'limited' %}rate-limited{% if board.factory.limit_until %} · resumes {{ board.factory.limit_until }}{% endif %} · not dead, waiting{% elif board.factory.state == 'launching' %}starting up · {{ (board.factory.age_s // 60)|int }} min{% elif board.factory.state == 'launch-failed' %}failed to start{% if board.factory.launch_count and board.factory.launch_count > 1 %} {{ board.factory.launch_count }} times{% endif %} · needs a look{% else %}{{ board.factory.state }}{% endif %}{% if board.factory.receipt %} · {{ board.factory.receipt }}{% endif %}
+    </span>
+    {% if board.factory.retry_queue %} · <span class="stamp amber" title="Orders that hit a failure (usually the Claude usage limit) — the daemon auto-retries them every few minutes until they land. Nothing is lost.">{{ board.factory.retry_queue }} queued for retry</span>{% endif %}
+    {% if board.factory.last_error %} · <span class="stamp {{ board.factory.last_error.level or 'red' }}" title="{{ board.factory.last_error.detail }} {{ board.factory.last_error.at_utc }}">{% if board.factory.last_error.level == 'amber' %}note: {{ board.factory.last_error.reason }}{% else %}⚠ {{ board.factory.last_error.reason }}: {{ board.factory.last_error.receipt }}{% endif %}</span>{% endif %} ·
+    {% endif %}
+    {% if board.unanswered and board.unanswered.count %}<span class="stamp red" title="Notes that were sent but no lane has picked up yet. The factory checks about every 3 minutes; past 5 minutes something is wrong.">{{ board.unanswered.count }} order{{ 's' if board.unanswered.count != 1 }} not picked up · oldest {{ board.unanswered.oldest_min }} min</span> · {% endif %}
+    {{ board.counts.needs_you }} waiting on you ·
+    {{ board.counts.machine }} in the machine ·
+    {{ board.counts.done }} done
+    {% if board.workbench.status != 'OK' %} · <span class="stamp red">DRIVE {{ board.workbench.status }}</span>{% endif %}
+    {% if board.index.state != 'READY' %} · <span class="stamp grey">index {{ board.index.state|lower }}</span>{% endif %}
+  </span>
+</div>
+
+{% if board.questions %}
+<section class="qstrip" aria-label="Questions the factory is waiting on">
+  <h2>Questions <span class="count">{{ board.questions|length }}</span> <span class="sub">the factory stopped and is waiting for your answer · tap one</span></h2>
+  {% for q in board.questions %}{{ question_card(q) }}{% endfor %}
+</section>
+{% endif %}
+
+{% if board.next_review %}
+<div class="eta" style="margin:-8px 0 14px;" title="Estimated from how long these phases have taken on the bus before — not a promise from any lane.">
+  <span class="est">EST</span>Next review expected {{ board.next_review.eta_local_label }} (±{{ '%.1f' % board.next_review.spread_hours }}h)
+</div>
+{% endif %}
+
+{% macro slate(card) %}
+<a class="slate {% if card.bucket == 'needs_you' %}hot{% elif card.bucket == 'done' %}done{% elif card.bucket == 'parked' %}parked{% endif %}" href="/row/{{ card.seq }}">
+  <div class="stripe"></div>
+  <div class="num">{{ '%02d' % card.seq }}</div>
+  <div class="meat">
+    <div class="title">{{ card.title }}</div>
+    <div class="staterow">
+      <span class="stamp {{ card.color }}">{{ card.phrase }}</span>
+      {% for call in card.calls %}<span class="stamp amber">CALL</span>{% endfor %}
+    </div>
+    <div class="metarow">
+      {% if card.shortcode %}<span>{{ card.shortcode }}</span>{% endif %}
+      {% if card.current_version and card.current_version != 'untagged' %}<span>{{ card.current_version }}</span>{% endif %}
+      {% if card.variants_on_disk %}<span>{{ card.variants_on_disk }}{% if card.variants_expected and card.variants_expected > card.variants_on_disk %} of {{ card.variants_expected }}{% endif %} variants</span>{% endif %}
+    </div>
+    {% if card.eta %}
+    <div class="eta" title="Estimate from past {{ card.eta.phase_label }} → delivery times on the bus. Currently in {{ card.eta.phase_label }}.">
+      <span class="est">EST</span>{{ card.eta.line }}
+    </div>
+    {% endif %}
+    {% if card.live %}
+    <div class="live{% if not card.live.alive %} stale{% endif %}" title="Read straight from the working agent's own transcript.">
+      <span class="dot"></span>{{ card.live.role }} agent{% if card.live.model %} · {{ card.live.model }}{% endif %}
+      {% if card.live.action.tool %}— {{ card.live.action.tool }}{% if card.live.action.detail %} · {{ card.live.action.detail }}{% endif %}{% endif %}
+      · {% if card.live.age_s < 90 %}{{ card.live.age_s | int }}s ago{% else %}{{ (card.live.age_s / 60) | int }}m ago{% endif %}
+    </div>
+    {% endif %}
+  </div>
+</a>
+{% endmacro %}
+
+<div class="lanes">
+  <div class="lane hot">
+    <h2>Needs you <span class="count">{{ board.counts.needs_you }}</span></h2>
+    <div class="cards">
+      {% for card in board.cards if card.bucket == 'needs_you' %}{{ slate(card) }}{% else %}<div class="empty">Nothing waiting on you.</div>{% endfor %}
+    </div>
+  </div>
+  <div class="lane">
+    <h2>In the machine <span class="count">{{ board.counts.machine }}</span></h2>
+    <div class="cards">
+      {% for p in board.pending %}
+      <div class="slate" title="Your drop receipt: {{ p.receipt }}">
+        <div class="stripe"></div>
+        <div class="num">NEW</div>
+        <div class="meat">
+          <div class="title">{{ p.shortcodes | join(' · ') }}</div>
+          <div class="staterow">
+            {% if p.state == 'called' %}<span class="stamp red">WAITING ON YOU — the factory asked a question</span>
+            {% elif p.state in ('queued', 'blocked') %}<span class="stamp amber">QUEUED — waiting</span>
+            {% elif p.state == 'running' %}<span class="stamp green">BUILDING</span>
+            {% elif p.state == 'finished' %}<span class="stamp green">DONE — row appears shortly</span>
+            {% elif p.picked_up %}<span class="stamp green">PICKED UP — lane starting</span>
+            {% else %}<span class="stamp amber">QUEUED — factory pickup &lt;60s</span>{% endif %}
+          </div>
+          {% if p.state in ('called', 'queued', 'blocked') and p.say %}<div class="metarow"><span>{{ p.say }}</span></div>{% endif %}
+          {% if p.note %}<div class="metarow"><span>&ldquo;{{ p.note }}&rdquo;</span></div>{% endif %}
+        </div>
+      </div>
+      {% endfor %}
+      {% for card in board.cards if card.bucket == 'machine' %}{{ slate(card) }}{% else %}{% if not board.pending %}<div class="empty">Nothing building.</div>{% endif %}{% endfor %}
+    </div>
+  </div>
+  <div class="lane">
+    <h2>Done <span class="count">{{ board.counts.done }}</span></h2>
+    <div class="cards">
+      {% for card in board.cards if card.bucket == 'done' %}{{ slate(card) }}{% else %}<div class="empty">Nothing finished yet.</div>{% endfor %}
+      {% set parked = board.cards | selectattr('bucket', 'equalto', 'parked') | list %}
+      {% if parked %}
+      <details class="archive"><summary>Parked · {{ parked|length }}</summary>
+        <div class="cards">{% for card in parked %}{{ slate(card) }}{% endfor %}</div>
+      </details>
+      {% endif %}
+    </div>
+  </div>
+</div>
+
+{% if board.archive %}
+<div class="archive-toggle">
+  <details class="archive">
+    <summary>Archive — earlier era · {{ board.archive|length }} reels</summary>
+    <div class="cards">{% for card in board.archive %}{{ slate(card) }}{% endfor %}</div>
+  </details>
+</div>
+{% endif %}
+
+{% endblock %}

@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<!-- Template. Replace __REEL_FACTORY_HOME__ (absolute path; launchd does not expand ~) before loading. -->
+<plist version="1.0">
+<dict>
+  <key>Label</key><string>com.reelfactory.reel-asker</string>
+  <key>ProgramArguments</key>
+  <array>
+    <string>/usr/bin/python3</string>
+    <string>__REEL_FACTORY_HOME__/tools/orderd/asker.py</string>
+    <string>--once</string>
+  </array>
+  <key>WorkingDirectory</key><string>__REEL_FACTORY_HOME__</string>
+  <key>StartInterval</key><integer>60</integer>
+  <key>RunAtLoad</key><true/>
+  <key>StandardOutPath</key><string>__REEL_FACTORY_HOME__/_receipts/orderd/asker.log</string>
+  <key>StandardErrorPath</key><string>__REEL_FACTORY_HOME__/_receipts/orderd/asker.err</string>
+  <key>EnvironmentVariables</key>
+  <dict>
+    <key>PATH</key><string>/opt/homebrew/bin:/usr/bin:/bin</string>
+    <key>REEL_FACTORY_HOME</key><string>__REEL_FACTORY_HOME__</string>
+    <key>REEL_FACTORY_TZ</key><string>UTC</string>
+  </dict>
+</dict>
+</plist>

@@ -1,0 +1,103 @@
+{% extends "base.html" %}
+{% set active = 'make' %}
+{% block title %}Make — Reel Deck{% endblock %}
+{% block content %}
+
+<div class="pagehead">
+  <h1>Make</h1>
+  <span class="sub">Drop a reference, or point at a finished reel and order its alternate batch. The factory picks it up from the bus.</span>
+</div>
+
+<div class="makegrid">
+  <div class="panelbox">
+    <h2>New reference</h2>
+    <div class="field">
+      <label for="drop-urls">Instagram / YouTube links — one per line</label>
+      <textarea id="drop-urls" class="mono" style="width:100%; min-height:90px; background:var(--bg); color:var(--ink); border:1px solid var(--line-strong); border-radius:4px; padding:9px 10px;"></textarea>
+    </div>
+    <div class="field">
+      <label for="drop-note">Note for the factory (optional)</label>
+      <input id="drop-note" type="text" placeholder="e.g. recreate 1:1 · window 1:02–1:10 · use the new footage">
+    </div>
+    <button class="btn primary" id="btn-drop">Send to the factory</button>
+  </div>
+
+  <div class="panelbox">
+    <h2>10 variants of a finished reel</h2>
+    {% if done %}
+    <div class="shellpick" id="shell-pick">
+      {% for card in done %}
+      <div class="pickrow" data-seq="{{ card.seq }}">
+        <span class="num">{{ '%02d' % card.seq }}</span>
+        <span class="t">{{ card.title }}</span>
+        {% if card.variants_on_disk %}<span class="mono" style="margin-left:auto;">{{ card.variants_on_disk }} variants exist</span>{% endif %}
+      </div>
+      {% endfor %}
+    </div>
+    <div class="field" style="margin-top:12px;">
+      <label for="batch-note">Note (optional)</label>
+      <input id="batch-note" type="text" placeholder="anything special for this batch">
+    </div>
+    <button class="btn primary" id="btn-order-batch">Order the batch</button>
+    {% else %}
+    <div class="empty">No finished reels on the board yet.</div>
+    {% endif %}
+  </div>
+</div>
+
+<div class="panelbox" style="margin-top:22px;">
+  <h2>Your recent orders</h2>
+  {% if receipts %}
+  <div class="receiptlist">
+    {% for receipt in receipts %}
+    <div class="r">
+      <span>{{ receipt.name }}</span>
+      <span>{% if receipt.acked %}<span class="stamp green">picked up</span>{% elif receipt.routed %}<span class="stamp blue">routed</span>{% else %}<span class="stamp grey">not picked up yet</span>{% endif %}</span>
+    </div>
+    {% endfor %}
+  </div>
+  {% else %}
+  <div class="empty">Nothing sent from here yet.</div>
+  {% endif %}
+</div>
+
+{% endblock %}
+{% block scripts %}
+<script>
+document.addEventListener("DOMContentLoaded", () => {
+  let picked = null;
+  document.querySelectorAll("#shell-pick .pickrow").forEach((row) => {
+    row.addEventListener("click", () => {
+      picked = picked === row.dataset.seq ? null : row.dataset.seq;
+      document.querySelectorAll("#shell-pick .pickrow").forEach((r) =>
+        r.classList.toggle("on", r.dataset.seq === picked));
+    });
+  });
+
+  document.getElementById("btn-drop").addEventListener("click", async () => {
+    const urls = document.getElementById("drop-urls").value.split("\n").map(s => s.trim()).filter(Boolean);
+    if (!urls.length) return toast("Paste at least one link.", true);
+    try {
+      const result = await postJSON("/api/drop", { urls, note: document.getElementById("drop-note").value });
+      toast(`Sent to the factory (${result.receipt})`);
+      document.getElementById("drop-urls").value = "";
+      document.getElementById("drop-note").value = "";
+      setTimeout(() => location.reload(), 1200);
+    } catch (error) { toast(error.message, true); }
+  });
+
+  const orderBtn = document.getElementById("btn-order-batch");
+  if (orderBtn) orderBtn.addEventListener("click", async () => {
+    if (!picked) return toast("Pick a reel first.", true);
+    try {
+      const result = await postJSON("/api/drop", {
+        urls: [], build_variants_of: parseInt(picked, 10),
+        note: document.getElementById("batch-note").value,
+      });
+      toast(`Batch ordered (${result.receipt})`);
+      setTimeout(() => location.reload(), 1200);
+    } catch (error) { toast(error.message, true); }
+  });
+});
+</script>
+{% endblock %}

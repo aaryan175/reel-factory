@@ -1,0 +1,31 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Sign in — Reel Deck</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Barlow:wght@400;500;600&family=Barlow+Condensed:wght@600;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/static/css/deck.css?v=1">
+</head>
+<body>
+<div class="login-stage">
+  <form class="login-card" method="post" action="/login">
+    <div class="wordmark"><span class="tally"></span>REEL DECK</div>
+    <div class="tag">Factory control room</div>
+    {% if error %}<div class="error">{{ error }}</div>{% endif %}
+    {% if not ready %}<div class="error">No login is set yet — set one with tools/set_login.py on the machine that runs the Deck.</div>{% endif %}
+    <div class="field">
+      <label for="username">User</label>
+      <input id="username" name="username" type="text" autocomplete="username" autofocus>
+    </div>
+    <div class="field">
+      <label for="password">Password</label>
+      <input id="password" name="password" type="password" autocomplete="current-password">
+    </div>
+    <button class="btn primary" type="submit">Sign in</button>
+  </form>
+</div>
+</body>
+</html>

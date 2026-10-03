@@ -1,0 +1,446 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Reel Studio</title>
+  <style>
+    :root {
+      color-scheme: dark;
+      --bg: #08090a;
+      --panel: #0f1011;
+      --surface: #151619;
+      --surface-2: #1b1c20;
+      --border: rgba(255,255,255,.08);
+      --border-soft: rgba(255,255,255,.05);
+      --text: #f7f8f8;
+      --muted: #8a8f98;
+      --subtle: #62666d;
+      --accent: #7170ff;
+      --accent-bg: #5e6ad2;
+      --success: #10b981;
+      --blocked: #f59e0b;
+      --danger: #f87171;
+      --radius: 8px;
+    }
+    * { box-sizing: border-box; }
+    html, body { min-height: 100%; }
+    body {
+      margin: 0;
+      background: var(--bg);
+      color: var(--text);
+      font-family: Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      font-feature-settings: "cv01", "ss03";
+      font-size: 14px;
+    }
+    button, input { font: inherit; }
+    button { cursor: pointer; }
+    .shell { min-height: 100vh; display: grid; grid-template-columns: 260px minmax(0, 1fr); }
+    .sidebar {
+      position: sticky; top: 0; height: 100vh; padding: 18px 14px;
+      border-right: 1px solid var(--border-soft); background: var(--panel);
+      display: flex; flex-direction: column; gap: 18px;
+    }
+    .brand { display: flex; align-items: center; gap: 10px; padding: 4px 6px 12px; }
+    .mark {
+      width: 28px; height: 28px; border-radius: 7px;
+      background: linear-gradient(145deg, #828fff, #5e6ad2 55%, #3f3b93);
+      box-shadow: inset 0 1px rgba(255,255,255,.25), 0 8px 30px rgba(94,106,210,.22);
+      display: grid; place-items: center; font-weight: 600;
+    }
+    .brand strong { font-weight: 590; letter-spacing: -.25px; }
+    .eyebrow { color: var(--subtle); text-transform: uppercase; letter-spacing: .08em; font-size: 10px; font-weight: 590; }
+    .project-list { display: grid; gap: 4px; overflow: auto; }
+    .project-item {
+      width: 100%; border: 1px solid transparent; background: transparent; color: var(--muted);
+      padding: 9px 10px; border-radius: 6px; text-align: left; display: grid; gap: 4px;
+    }
+    .project-item:hover, .project-item.active { color: var(--text); background: rgba(255,255,255,.04); border-color: var(--border-soft); }
+    .project-item span { font-size: 12px; color: var(--subtle); }
+    .screen-link {
+      border: 1px solid transparent; background: transparent; color: var(--muted); text-decoration: none;
+      padding: 9px 10px; border-radius: 6px; display: grid; gap: 4px;
+    }
+    .screen-link:hover { color: var(--text); background: rgba(255,255,255,.04); border-color: var(--border-soft); }
+    .screen-link span { font-size: 12px; color: var(--subtle); }
+    .sidebar-foot { margin-top: auto; padding: 10px; border: 1px solid var(--border-soft); background: rgba(255,255,255,.02); border-radius: var(--radius); color: var(--muted); font-size: 12px; line-height: 1.5; }
+    .dot { width: 7px; height: 7px; border-radius: 50%; display: inline-block; margin-right: 7px; background: var(--success); box-shadow: 0 0 12px rgba(16,185,129,.6); }
+    main { min-width: 0; }
+    .topbar {
+      height: 64px; padding: 0 28px; border-bottom: 1px solid var(--border-soft);
+      display: flex; align-items: center; justify-content: space-between; background: rgba(8,9,10,.84); backdrop-filter: blur(16px);
+      position: sticky; top: 0; z-index: 10;
+    }
+    .topbar h1 { margin: 0; font-size: 16px; font-weight: 510; letter-spacing: -.18px; }
+    .pill { border: 1px solid var(--border); border-radius: 999px; color: var(--muted); padding: 5px 9px; font-size: 11px; }
+    .content { max-width: 1120px; margin: 0 auto; padding: 34px 28px 72px; }
+    .hero { display: flex; justify-content: space-between; gap: 24px; align-items: end; margin-bottom: 24px; }
+    .hero h2 { margin: 7px 0 8px; font-size: 30px; line-height: 1.1; font-weight: 510; letter-spacing: -.66px; }
+    .hero p { margin: 0; color: var(--muted); line-height: 1.55; max-width: 660px; }
+    .button {
+      border: 1px solid var(--border); background: rgba(255,255,255,.035); color: #e2e4e7;
+      padding: 9px 13px; border-radius: 6px; font-weight: 510; transition: .16s ease;
+    }
+    .button:hover { background: rgba(255,255,255,.07); border-color: rgba(255,255,255,.13); }
+    .button.primary { background: var(--accent-bg); border-color: #7170ff; color: white; }
+    .button.primary:hover { background: #6d72e0; }
+    .button:disabled { opacity: .42; cursor: not-allowed; }
+    .grid { display: grid; grid-template-columns: minmax(0, 1.08fr) minmax(300px, .92fr); gap: 16px; }
+    .card { border: 1px solid var(--border); border-radius: 10px; background: rgba(255,255,255,.022); overflow: hidden; }
+    .card-head { padding: 16px 18px; border-bottom: 1px solid var(--border-soft); display: flex; align-items: center; justify-content: space-between; gap: 14px; }
+    .card-head h3 { margin: 0; font-size: 14px; font-weight: 590; letter-spacing: -.12px; }
+    .card-body { padding: 18px; }
+    form { display: grid; gap: 15px; }
+    label.field { display: grid; gap: 7px; color: #d0d6e0; font-size: 12px; font-weight: 510; }
+    input[type="text"] {
+      width: 100%; border: 1px solid var(--border); background: rgba(255,255,255,.025); color: var(--text);
+      padding: 11px 12px; border-radius: 6px; outline: none;
+    }
+    input[type="text"]:focus { border-color: rgba(113,112,255,.8); box-shadow: 0 0 0 3px rgba(113,112,255,.12); }
+    input::placeholder { color: #555961; }
+    .modes { display: grid; grid-template-columns: 1fr 1fr; gap: 9px; }
+    .mode { position: relative; }
+    .mode input { position: absolute; opacity: 0; pointer-events: none; }
+    .mode label {
+      min-height: 122px; border: 1px solid var(--border); background: rgba(255,255,255,.018); border-radius: 8px;
+      padding: 13px; display: grid; align-content: start; gap: 7px; cursor: pointer; transition: .16s ease;
+    }
+    .mode label:hover { background: rgba(255,255,255,.04); }
+    .mode input:checked + label { border-color: var(--accent); background: rgba(113,112,255,.09); box-shadow: inset 0 0 0 1px rgba(113,112,255,.25); }
+    .mode strong { font-size: 13px; font-weight: 590; }
+    .mode small { color: var(--muted); line-height: 1.45; }
+    .mode-tag { width: max-content; color: #a6a5ff; font: 500 9px ui-monospace, SFMono-Regular, Menlo, monospace; letter-spacing: .06em; text-transform: uppercase; }
+    .message { min-height: 19px; color: var(--muted); font-size: 12px; line-height: 1.5; }
+    .message.error { color: var(--danger); }
+    .message.success { color: var(--success); }
+    .empty { padding: 36px 18px; color: var(--muted); text-align: center; line-height: 1.6; }
+    .project-view { display: none; }
+    .project-view.visible { display: block; }
+    .project-meta { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 10px; }
+    .status-pill { border: 1px solid var(--border); border-radius: 999px; padding: 5px 8px; color: var(--muted); font: 500 10px ui-monospace, SFMono-Regular, Menlo, monospace; }
+    .status-pill.blocked { color: #fbbf24; border-color: rgba(245,158,11,.28); background: rgba(245,158,11,.07); }
+    .timeline { display: grid; gap: 0; margin: 4px 0 18px; }
+    .stage { display: grid; grid-template-columns: 18px 1fr; gap: 10px; min-height: 38px; }
+    .stage-rail { display: grid; justify-items: center; grid-template-rows: 12px 1fr; }
+    .stage-dot { width: 8px; height: 8px; border: 1px solid #4a4d53; border-radius: 50%; margin-top: 2px; background: var(--panel); }
+    .stage-line { width: 1px; height: 100%; background: var(--border); }
+    .stage:last-child .stage-line { display: none; }
+    .stage.done .stage-dot { border-color: var(--success); background: var(--success); }
+    .stage.current .stage-dot { border-color: var(--accent); background: var(--accent); box-shadow: 0 0 0 4px rgba(113,112,255,.12); }
+    .stage-text { padding-bottom: 13px; }
+    .stage-text strong { display: block; font-size: 11px; font-weight: 510; color: #c8cbd0; }
+    .stage-text span { color: var(--subtle); font-size: 10px; }
+    .gate-note { border: 1px solid rgba(245,158,11,.18); background: rgba(245,158,11,.055); padding: 12px; border-radius: 7px; color: #c7b782; font-size: 12px; line-height: 1.5; margin-bottom: 14px; }
+    pre { margin: 14px 0 0; max-height: 260px; overflow: auto; border: 1px solid var(--border-soft); background: #0a0b0c; color: #b4b7bd; border-radius: 7px; padding: 12px; font: 11px/1.55 ui-monospace, SFMono-Regular, Menlo, monospace; white-space: pre-wrap; }
+    .contract { margin-top: 16px; display: grid; grid-template-columns: repeat(3, 1fr); gap: 9px; }
+    .contract div { border: 1px solid var(--border-soft); background: rgba(255,255,255,.018); border-radius: 8px; padding: 12px; }
+    .contract strong { display: block; font-size: 11px; margin-bottom: 5px; }
+    .contract span { color: var(--muted); font-size: 11px; line-height: 1.45; }
+    .workbench { margin-top: 18px; border-top: 1px solid var(--border-soft); padding-top: 16px; }
+    .workbench-head { display: flex; justify-content: space-between; gap: 12px; align-items: baseline; }
+    .workbench-head h4 { margin: 0; font-size: 13px; font-weight: 590; }
+    .workbench-grid { display: grid; grid-template-columns: 1fr; gap: 10px; margin-top: 12px; }
+    .workbench select, .workbench textarea { width: 100%; border: 1px solid var(--border); border-radius: 7px; background: #111214; color: var(--text); padding: 10px; font: 11px/1.5 ui-monospace, SFMono-Regular, Menlo, monospace; }
+    .workbench textarea { min-height: 132px; resize: vertical; }
+    .workbench-actions { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 10px; }
+    .artifact-line { display: block; color: var(--subtle); font: 10px/1.5 ui-monospace, SFMono-Regular, Menlo, monospace; word-break: break-all; text-decoration: none; }
+    .artifact-line:hover { color: var(--text); }
+    @media (max-width: 560px) { .workbench-grid { grid-template-columns: 1fr; } }
+    @media (max-width: 880px) {
+      .shell { grid-template-columns: 1fr; }
+      .sidebar { position: static; height: auto; border-right: 0; border-bottom: 1px solid var(--border-soft); }
+      .project-list, .sidebar-foot { display: none; }
+      .grid { grid-template-columns: 1fr; }
+    }
+    @media (max-width: 560px) {
+      .topbar { padding: 0 16px; }
+      .content { padding: 24px 16px 50px; }
+      .hero { display: block; }
+      .hero .button { margin-top: 15px; }
+      .modes, .contract { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+  <div class="shell">
+    <aside class="sidebar">
+      <div class="brand"><div class="mark">R</div><strong>Reel Studio</strong></div>
+      <div>
+        <div class="eyebrow" style="padding:0 10px 8px">Screens</div>
+        <div class="project-list" style="margin-bottom:14px">
+          <a class="screen-link" href="/intake"><strong>Intake</strong><span>One reference in</span></a>
+          <a class="screen-link" href="/board"><strong>Pipeline board</strong><span>14 layers, live</span></a>
+        </div>
+        <div class="eyebrow" style="padding:0 10px 8px">Projects</div>
+        <div id="projectList" class="project-list"><div class="empty">Loading…</div></div>
+      </div>
+      <div class="sidebar-foot"><span class="dot"></span>Local control plane<br>Loopback-only. No publishing API.</div>
+    </aside>
+
+    <main>
+      <header class="topbar">
+        <h1>Production control plane</h1>
+        <span class="pill">fail-closed · hash-bound</span>
+      </header>
+      <div class="content">
+        <section class="hero">
+          <div>
+            <div class="eyebrow">Reference-led production</div>
+            <h2>One engine. Two honest modes.</h2>
+            <p>Enter the exact reference and complete footage pool. Reel Studio records the style contract, blocks infeasible work, and stops at local review.</p>
+          </div>
+          <button id="refreshButton" class="button">Refresh state</button>
+        </section>
+
+        <div class="grid">
+          <section class="card">
+            <div class="card-head"><h3>Create project</h3><span class="eyebrow">Ingest</span></div>
+            <div class="card-body">
+              <form id="createForm">
+                <label class="field">Project ID
+                  <input id="projectId" type="text" required pattern="[A-Za-z0-9][A-Za-z0-9._-]*" placeholder="reel-001">
+                </label>
+                <label class="field">Exact reference URL or local path
+                  <input id="reference" type="text" required placeholder="/path/to/reference.mp4 or https://…">
+                </label>
+                <label class="field">Authorized footage folder
+                  <input id="footage" type="text" required placeholder="/path/to/full-footage-pool">
+                </label>
+                <div class="field">
+                  <span>Production mode — choose explicitly</span>
+                  <div class="modes">
+                    <div class="mode">
+                      <input id="modeMontage" name="mode" type="radio" value="original-montage" required>
+                      <label for="modeMontage">
+                        <span class="mode-tag">Recommended default</span>
+                        <strong>Original montage</strong>
+                        <small>“Make one like this.” Transfer rhythm, shot roles, sound grammar and mood using your own footage.</small>
+                      </label>
+                    </div>
+                    <div class="mode">
+                      <input id="modeLocked" name="mode" type="radio" value="reference-locked" required>
+                      <label for="modeLocked">
+                        <span class="mode-tag">Strict reconstruction</span>
+                        <strong>Reference locked</strong>
+                        <small>“Recreate this.” Exact clock, states, cuts, captions and effects. Blocks below the exact-scene threshold.</small>
+                      </label>
+                    </div>
+                  </div>
+                </div>
+                <button class="button primary" type="submit">Create project</button>
+                <div id="createMessage" class="message">Creation stores the choice but defers analysis until you run the next safe stage.</div>
+              </form>
+            </div>
+          </section>
+
+          <section class="card">
+            <div class="card-head"><h3>Selected project</h3><span id="selectedLabel" class="eyebrow">None</span></div>
+            <div id="emptyProject" class="empty">Create or select a project to see its immutable stage timeline.</div>
+            <div id="projectView" class="card-body project-view">
+              <div>
+                <strong id="selectedTitle" style="font-size:18px;font-weight:510"></strong>
+                <div class="project-meta">
+                  <span id="selectedMode" class="status-pill"></span>
+                  <span id="selectedNext" class="status-pill blocked"></span>
+                </div>
+              </div>
+              <div id="timeline" class="timeline" style="margin-top:20px"></div>
+              <div class="gate-note"><strong>Chat-ready is not approved.</strong> The machine state is <code>LOCAL_REVIEW_READY</code> only after technical, structure and visual gates pass. Publication remains separate.</div>
+              <button id="runButton" class="button primary">Run next safe stage</button>
+              <div id="runMessage" class="message"></div>
+              <pre id="resultPanel">No action run yet.</pre>
+              <div class="workbench">
+                <div class="workbench-head"><h4>Stage workbench</h4><span id="workbenchStage" class="eyebrow">Load a project</span></div>
+                <div id="workbenchHint" class="message">Every action is allowlisted and delegated to the same reelctl engine.</div>
+                <div class="workbench-grid">
+                  <label class="field">Engine action
+                    <select id="actionSelect"></select>
+                  </label>
+                  <label class="field">Structured payload (JSON)
+                    <textarea id="actionPayload" spellcheck="false">{}</textarea>
+                  </label>
+                </div>
+                <div class="workbench-actions">
+                  <button id="actionButton" class="button primary">Execute action</button>
+                  <button id="exampleButton" class="button" type="button">Load example payload</button>
+                </div>
+                <div id="actionMessage" class="message"></div>
+                <div id="artifactList"></div>
+              </div>
+            </div>
+          </section>
+        </div>
+
+        <section class="contract">
+          <div><strong>Reference proof</strong><span>The exact downloaded bytes, complete frame blueprint and comparison boards stay hash-bound.</span></div>
+          <div><strong>Feasibility before render</strong><span>Reference locked requires 80% exact-scene coverage. Missing scenes force a mode decision—not a fake PASS.</span></div>
+          <div><strong>Human authority</strong><span>Agent review cannot override machine failure. Local files cannot forge final approval or publish.</span></div>
+        </section>
+      </div>
+    </main>
+  </div>
+
+  <script>
+    const stages = [
+      "REFERENCE_LOCKED", "BLUEPRINT_LOCKED", "FOOTAGE_INDEXED", "FEASIBILITY_REPORTED",
+      "SELECTION_LOCKED", "ASSETS_LOCKED", "RENDERED", "TECHNICAL_QC", "STRUCTURE_QC",
+      "VISUAL_QC", "LOCAL_REVIEW_READY"
+    ];
+    let selectedId = null;
+    let projects = [];
+    const $ = (id) => document.getElementById(id);
+
+    async function api(path, options = {}) {
+      const response = await fetch(path, {headers: {"Content-Type": "application/json"}, ...options});
+      const payload = await response.json();
+      if (!response.ok) throw new Error(payload.error || payload.detail?.[0]?.msg || `Request failed (${response.status})`);
+      return payload;
+    }
+
+    function stageStatus(project, stage) {
+      const record = project.stages?.[stage];
+      if (record?.status === "PASS" || record?.status === "COMPLETED") return "done";
+      if (stage === project.next_stage) return "current";
+      return "pending";
+    }
+
+    function renderTimeline(project) {
+      $("timeline").innerHTML = stages.map((stage) => {
+        const status = stageStatus(project, stage);
+        return `<div class="stage ${status}"><div class="stage-rail"><span class="stage-dot"></span><span class="stage-line"></span></div><div class="stage-text"><strong>${stage.replaceAll("_", " ")}</strong><span>${status}</span></div></div>`;
+      }).join("");
+    }
+
+    const examples = {
+      reference_analyze: {},
+      blueprint_lock: {accept_draft: false, boundaries: [], hard_cuts: [], observations: {}, all_frames_reviewed: false},
+      footage_index: {default_profile: "log_unknown"},
+      feasibility_template: {force: false},
+      feasibility_lock: {manifest: {}},
+      selection_template: {force: false},
+      selection_validate: {selection: {}},
+      assets_template: {force: false},
+      assets_lock: {manifest: {}},
+      pipeline_run: {revision: "v001"},
+      render: {revision: "v001"},
+      qc: {revision: "v001"},
+      agent_review: {revision: "v001", status: "FAIL", normal_speed_full_watch: false, reference_side_by_side_checked: false, typography_checked: false, color_checked: false, cut_and_beat_checked: false, notes: ""}
+    };
+
+    async function loadWorkbench(project) {
+      try {
+        const data = await api(`/api/projects/${encodeURIComponent(project.project_id)}/workbench`);
+        $("workbenchStage").textContent = data.next_stage || "COMPLETE";
+        $("actionSelect").innerHTML = data.actions.map((action) => `<option value="${escapeHtml(action)}">${escapeHtml(action)}</option>`).join("");
+        if (data.recommended_action) $("actionSelect").value = data.recommended_action;
+        $("actionPayload").value = JSON.stringify(examples[$("actionSelect").value] || {}, null, 2);
+        $("workbenchHint").textContent = data.recommended_action ? `Recommended next action: ${data.recommended_action}. The engine will block invalid order or missing proof.` : "No further engine action is available.";
+        const stageEntries = Object.entries(data.stages || {});
+        $("artifactList").innerHTML = stageEntries.flatMap(([stage, record]) => (record.outputs || []).map((path) => `<a class="artifact-line" target="_blank" rel="noopener" href="/api/projects/${encodeURIComponent(selectedId)}/artifact?path=${encodeURIComponent(path)}">${escapeHtml(stage)} · ${escapeHtml(path)}</a>`)).join("");
+      } catch (error) {
+        $("workbenchHint").textContent = error.message;
+      }
+    }
+
+    function selectProject(id) {
+      selectedId = id;
+      const project = projects.find((item) => item.project_id === id);
+      document.querySelectorAll(".project-item").forEach((button) => button.classList.toggle("active", button.dataset.id === id));
+      if (!project) return;
+      $("emptyProject").style.display = "none";
+      $("projectView").classList.add("visible");
+      $("selectedLabel").textContent = "Active";
+      $("selectedTitle").textContent = project.project_id;
+      $("selectedMode").textContent = project.mode;
+      $("selectedNext").textContent = project.next_stage || "COMPLETE";
+      renderTimeline(project);
+      loadWorkbench(project);
+    }
+
+    function escapeHtml(value) {
+      return String(value).replace(/[&<>"']/g, (character) => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[character]));
+    }
+
+    async function loadProjects() {
+      try {
+        const payload = await api("/api/projects");
+        projects = payload.projects;
+        $("projectList").innerHTML = projects.length ? projects.map((project) => `<button class="project-item" data-id="${escapeHtml(project.project_id)}"><strong>${escapeHtml(project.project_id)}</strong><span>${escapeHtml(project.mode)} · ${escapeHtml(project.next_stage || "complete")}</span></button>`).join("") : '<div class="empty">No projects yet.</div>';
+        document.querySelectorAll(".project-item").forEach((button) => button.addEventListener("click", () => selectProject(button.dataset.id)));
+        if (selectedId && projects.some((item) => item.project_id === selectedId)) selectProject(selectedId);
+        else if (projects.length) selectProject(projects[0].project_id);
+      } catch (error) {
+        $("projectList").innerHTML = `<div class="empty">${error.message}</div>`;
+      }
+    }
+
+    $("createForm").addEventListener("submit", async (event) => {
+      event.preventDefault();
+      const mode = document.querySelector('input[name="mode"]:checked');
+      if (!mode) return;
+      const body = {project_id: $("projectId").value.trim(), reference: $("reference").value.trim(), footage: $("footage").value.trim(), mode: mode.value};
+      $("createMessage").className = "message";
+      $("createMessage").textContent = "Creating durable project…";
+      try {
+        const result = await api("/api/projects", {method: "POST", body: JSON.stringify(body)});
+        selectedId = result.project_id;
+        $("createMessage").className = "message success";
+        $("createMessage").textContent = `Created. Next gate: ${result.next_stage}.`;
+        await loadProjects();
+      } catch (error) {
+        $("createMessage").className = "message error";
+        $("createMessage").textContent = error.message;
+      }
+    });
+
+    $("runButton").addEventListener("click", async () => {
+      if (!selectedId) return;
+      $("runButton").disabled = true;
+      $("runMessage").textContent = "Running until the next proof or human gate…";
+      try {
+        const result = await api(`/api/projects/${encodeURIComponent(selectedId)}/run`, {method: "POST", body: JSON.stringify({revision: "v001"})});
+        $("resultPanel").textContent = JSON.stringify(result, null, 2);
+        $("runMessage").textContent = result.status === "BLOCKED" ? "Stopped safely at the next required decision." : result.status;
+        await loadProjects();
+      } catch (error) {
+        $("runMessage").className = "message error";
+        $("runMessage").textContent = error.message;
+      } finally {
+        $("runButton").disabled = false;
+      }
+    });
+
+    $("actionSelect").addEventListener("change", () => {
+      $("actionPayload").value = JSON.stringify(examples[$("actionSelect").value] || {}, null, 2);
+    });
+
+    $("exampleButton").addEventListener("click", () => {
+      $("actionPayload").value = JSON.stringify(examples[$("actionSelect").value] || {}, null, 2);
+    });
+
+    $("actionButton").addEventListener("click", async () => {
+      if (!selectedId) return;
+      let payload;
+      try { payload = JSON.parse($("actionPayload").value || "{}"); }
+      catch (error) { $("actionMessage").className = "message error"; $("actionMessage").textContent = "Payload is not valid JSON."; return; }
+      $("actionButton").disabled = true;
+      $("actionMessage").className = "message";
+      $("actionMessage").textContent = "Executing allowlisted engine action…";
+      try {
+        const action = $("actionSelect").value;
+        const result = await api(`/api/projects/${encodeURIComponent(selectedId)}/actions`, {method: "POST", body: JSON.stringify({action, payload})});
+        $("resultPanel").textContent = JSON.stringify(result, null, 2);
+        $("actionMessage").className = "message success";
+        $("actionMessage").textContent = result.result?.status || result.status;
+        await loadProjects();
+      } catch (error) {
+        $("actionMessage").className = "message error";
+        $("actionMessage").textContent = error.message;
+      } finally { $("actionButton").disabled = false; }
+    });
+
+    $("refreshButton").addEventListener("click", loadProjects);
+    loadProjects();
+  </script>
+</body>
+</html>

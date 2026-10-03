@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<!-- Template. Replace __REEL_DECK_HOME__, __REEL_FACTORY_HOME__ and __REEL_FACTORY_WORKDRIVE__ with
+     absolute paths (launchd does not expand ~) before loading. -->
+<plist version="1.0">
+<dict>
+  <key>Label</key><string>com.reelfactory.reel-deck</string>
+  <key>ProgramArguments</key>
+  <array>
+    <string>__REEL_DECK_HOME__/.venv/bin/python</string>
+    <string>-m</string><string>uvicorn</string>
+    <string>server.main:app</string>
+    <string>--host</string><string>127.0.0.1</string>
+    <string>--port</string><string>7355</string>
+  </array>
+  <key>WorkingDirectory</key><string>__REEL_DECK_HOME__</string>
+  <key>RunAtLoad</key><true/>
+  <key>KeepAlive</key><true/>
+  <key>ThrottleInterval</key><integer>5</integer>
+  <key>StandardOutPath</key><string>__REEL_DECK_HOME__/logs/deck.log</string>
+  <key>StandardErrorPath</key><string>__REEL_DECK_HOME__/logs/deck.err</string>
+  <key>EnvironmentVariables</key>
+  <dict>
+    <key>PATH</key><string>/opt/homebrew/bin:/usr/bin:/bin</string>
+    <key>REEL_DECK_HOME</key><string>__REEL_DECK_HOME__</string>
+    <key>REEL_FACTORY_HOME</key><string>__REEL_FACTORY_HOME__</string>
+    <key>REEL_FACTORY_WORKDRIVE</key><string>__REEL_FACTORY_WORKDRIVE__</string>
+    <key>REEL_FACTORY_TZ</key><string>UTC</string>
+  </dict>
+</dict>
+</plist>

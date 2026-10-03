@@ -1,0 +1,23 @@
+# media + renders never go in the repo
+*.mp4
+*.mov
+*.MP4
+*.MOV
+*.wav
+*.m4a
+*.mp3
+*.png
+*.jpg
+*.jpeg
+# local state / secrets
+.env
+*.pw
+**/config.local.json
+**/.tokens*
+__pycache__/
+*.pyc
+.pytest_cache/
+.venv*/
+logs/
+.DS_Store
+*.egg-info/

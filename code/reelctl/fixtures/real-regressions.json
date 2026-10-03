@@ -1,0 +1,57 @@
+{
+  "schema_version": 1,
+  "_comment": "Template. Point each entry at YOUR OWN regression media and fill in the sha256 of each file (shasum -a 256 <file>). Relative paths resolve against this manifest's directory. Run: reelctl fixtures audit --manifest <this file>",
+  "fixtures": [
+    {
+      "id": "accepted-example",
+      "expected_verdict": "ACCEPTED",
+      "candidate": "examples/accepted/candidate.mp4",
+      "candidate_sha256": "<sha256-of-candidate>",
+      "evidence": "examples/accepted/render-contract.json"
+    },
+    {
+      "id": "unresolved-example",
+      "expected_verdict": "UNRESOLVED",
+      "candidate": "examples/unresolved/candidate.mp4",
+      "candidate_sha256": "<sha256-of-candidate>",
+      "evidence": "examples/unresolved/creative-qc.json",
+      "evidence_sha256": "<sha256-of-evidence>",
+      "required_evidence": {
+        "status": "PASS_FOR_USER_REVIEW",
+        "human_approval": "PENDING"
+      }
+    },
+    {
+      "id": "rejected-example-human-override",
+      "expected_verdict": "REJECTED",
+      "mode": "reference-locked",
+      "candidate": "examples/rejected/candidate.mp4",
+      "candidate_sha256": "<sha256-of-candidate>",
+      "reference": "examples/rejected/reference.mp4",
+      "reference_sha256": "<sha256-of-reference>",
+      "blueprint": "examples/rejected/blueprint.json",
+      "blueprint_sha256": "<sha256-of-blueprint>",
+      "human_verdict_receipt": "examples/rejected/human-rejection.json",
+      "human_verdict_receipt_sha256": "<sha256-of-receipt>",
+      "required_failure": {
+        "visual_quality_degrades_after_frame": 48,
+        "reported_defects": ["post-boundary color grading", "caption typography"],
+        "reason": "human rejection overrides a prior autonomous visual PASS; reference-relative QC must reproduce FAIL"
+      }
+    },
+    {
+      "id": "rejected-example-collapsed-structure",
+      "expected_verdict": "REJECTED",
+      "candidate": "examples/collapsed/candidate.mp4",
+      "candidate_sha256": "<sha256-of-candidate>",
+      "blueprint": "examples/collapsed/blueprint.json",
+      "selection": "examples/collapsed/selection.json",
+      "required_failure": {
+        "reference_picture_blocks": 32,
+        "reference_hard_cuts": 27,
+        "selected_picture_slots": 16,
+        "reason": "technical/audio pass cannot override missing picture blocks, guessed typography, or failed visual parity"
+      }
+    }
+  ]
+}

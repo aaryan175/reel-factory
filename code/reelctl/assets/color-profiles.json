@@ -1,0 +1,18 @@
+{
+  "schema_version": 1,
+  "profiles": {
+    "rec709": {
+      "technical_transform": "identity",
+      "lut": null,
+      "verification": "source must already be display-referred Rec.709"
+    },
+    "sony_slog3_sgamut3cine": {
+      "technical_transform": "sony_lc709",
+      "lut": "luts/Sony-LC-709-official.cube",
+      "lut_sha256": "d41aeebbca5c4df100f1e6b53b739bd1e7bc38e49890812a14ba7275ebfbbf94",
+      "provenance": "byte-identical copy of the official Sony LC-709 LUT already locked in the accepted reel projects",
+      "verification": "camera gamma/gamut must be confirmed as S-Log3/S-Gamut3.Cine before use"
+    }
+  },
+  "fail_closed": "A file looking flat does not identify its log curve or gamut. Unknown log stays blocked until camera profile or a verified custom input LUT is supplied."
+}

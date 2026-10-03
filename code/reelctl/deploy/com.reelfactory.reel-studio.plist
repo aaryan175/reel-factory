@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>Label</key>
+	<string>com.reelfactory.reel-studio</string>
+
+	<!-- The web app. Loopback-only by construction: run_server refuses any non-loopback
+	     host, so the bind address here is belt and braces, not the only guard. -->
+	<key>ProgramArguments</key>
+	<array>
+		<string>__HOME__/.local/bin/reelctl</string>
+		<string>--projects-root</string>
+		<string>__REEL_FACTORY_HOME__</string>
+		<string>serve</string>
+		<string>--host</string>
+		<string>127.0.0.1</string>
+		<string>--port</string>
+		<string>7335</string>
+	</array>
+
+	<key>WorkingDirectory</key>
+	<string>__REEL_FACTORY_HOME__</string>
+
+	<key>EnvironmentVariables</key>
+	<dict>
+		<!-- A launchd job starts with /usr/bin:/bin. ffmpeg/ffprobe/rclone/yt-dlp live in
+		     /opt/homebrew/bin and reelctl/claude in __HOME__/.local/bin, so without this the
+		     health strip reports binaries missing on a machine that has them. -->
+		<key>PATH</key>
+		<string>__HOME__/.local/bin:/opt/homebrew/bin:/usr/bin:/bin</string>
+		<key>PYTHONUNBUFFERED</key>
+		<string>1</string>
+	</dict>
+
+	<key>RunAtLoad</key>
+	<true/>
+	<key>KeepAlive</key>
+	<true/>
+	<!-- The board should come back immediately after a crash; the app is cheap
+	     to start and holds no work. -->
+	<key>ThrottleInterval</key>
+	<integer>10</integer>
+	<key>ProcessType</key>
+	<string>Standard</string>
+
+	<key>StandardOutPath</key>
+	<string>__REEL_FACTORY_HOME__/.studio/logs/reel-studio.out.log</string>
+	<key>StandardErrorPath</key>
+	<string>__REEL_FACTORY_HOME__/.studio/logs/reel-studio.err.log</string>
+</dict>
+</plist>

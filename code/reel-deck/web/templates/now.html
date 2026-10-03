@@ -1,0 +1,74 @@
+{% extends "base.html" %}
+{% set active = 'now' %}
+{% block title %}Now — Reel Deck{% endblock %}
+{% block content %}
+
+<div class="pagehead">
+  <h1>Now</h1>
+  <span class="sub">What the factory is doing this minute — from receipts and disk, not from anyone's claims.</span>
+</div>
+
+<div class="nowgrid">
+  <section>
+    <h2>Waiting on you</h2>
+    {% for card in now.waiting %}
+    <a class="slate hot" href="/row/{{ card.seq }}" style="margin-bottom:8px;">
+      <div class="stripe"></div>
+      <div class="num">{{ '%02d' % card.seq }}</div>
+      <div class="meat">
+        <div class="title">{{ card.title }}</div>
+        <div class="staterow"><span class="stamp {{ card.color }}">{{ card.phrase }}</span></div>
+        {% for call in card.calls %}<div class="mono" style="margin-top:4px; color:var(--amber);">{{ call.call_id }}</div>{% endfor %}
+      </div>
+    </a>
+    {% else %}<div class="empty">Nothing needs you right now.</div>{% endfor %}
+    {% if now.calls_unmatched %}
+    <h2 style="margin-top:16px;">Open calls (not tied to one reel)</h2>
+    {% for call in now.calls_unmatched %}
+    <div class="calls"><div class="call"><span class="cid">{{ call.call_id }}</span><p>{{ call.one_liner }}</p></div></div>
+    {% endfor %}
+    {% endif %}
+  </section>
+
+  <section>
+    <h2>Machine</h2>
+    <div class="statrow"><span>Workbench drive</span><b class="{% if now.workbench.status == 'OK' %}ok{% else %}err{% endif %}">{{ now.workbench.status }}</b></div>
+    <div class="statrow"><span>Workbench free</span><b>{{ now.disks.workbench.free_gb }} GB</b></div>
+    <div class="statrow"><span>Internal free</span><b>{{ now.disks.internal.free_gb }} GB</b></div>
+    <div class="statrow"><span>Media index</span><b>{{ now.index.state }} · {{ now.index.files }} files</b></div>
+    <div class="statrow"><span>Registry updated</span><b>{{ now.registry.updated_at_utc or '?' }}</b></div>
+    {% if now.registry.error %}<div class="statrow"><span>Registry</span><b class="err">{{ now.registry.error }}</b></div>{% endif %}
+
+    <h2 style="margin-top:16px;">Being built</h2>
+    {% if now.next_review %}
+    <div class="eta" title="Estimated from past phase durations on the bus — not a promise from any lane.">
+      <span class="est">EST</span>Next review expected {{ now.next_review.eta_local_label }} (±{{ '%.1f' % now.next_review.spread_hours }}h)
+    </div>
+    {% endif %}
+    {% for card in now.building %}
+    <div class="statrow"><span>{{ '%02d' % card.seq }} — {{ card.title }}</span><b>{{ card.lane_mtime_utc or card.phrase }}</b></div>
+    {% if card.eta %}
+    <div class="eta" title="Currently in {{ card.eta.phase_label }}. Estimate from past {{ card.eta.phase_label }} → delivery times on the bus.">
+      <span class="est">EST</span>{{ card.eta.line }}
+    </div>
+    {% endif %}
+    {% else %}<div class="empty">No lanes writing.</div>{% endfor %}
+  </section>
+
+  <section>
+    <h2>Your orders</h2>
+    {% for receipt in now.ui_receipts %}
+    <div class="statrow"><span>{{ receipt.name }}</span>
+      <b>{% if receipt.acked %}picked up{% elif receipt.routed %}routed{% else %}waiting{% endif %}</b></div>
+    {% else %}<div class="empty">Nothing sent yet.</div>{% endfor %}
+  </section>
+
+  <section>
+    <h2>Factory bus — latest receipts</h2>
+    <div class="buslist">
+      {% for entry in now.bus %}{{ entry.mtime_utc[11:16] }} · {{ entry.name }}<br>{% endfor %}
+    </div>
+  </section>
+</div>
+
+{% endblock %}

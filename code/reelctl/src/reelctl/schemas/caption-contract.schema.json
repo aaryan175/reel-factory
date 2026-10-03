@@ -1,0 +1,386 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://local.reelctl/schemas/caption-contract.schema.json",
+  "title": "caption contract (reference-derived)",
+  "$defs": {
+    "bbox_xyxy": {
+      "type": "array",
+      "prefixItems": [
+        {"type": "integer", "minimum": 0},
+        {"type": "integer", "minimum": 0},
+        {"type": "integer", "minimum": 1},
+        {"type": "integer", "minimum": 1}
+      ],
+      "items": false
+    },
+    "normalized_xyxy": {
+      "type": "array",
+      "prefixItems": [
+        {"type": "number", "minimum": 0, "maximum": 1},
+        {"type": "number", "minimum": 0, "maximum": 1},
+        {"type": "number", "minimum": 0, "maximum": 1},
+        {"type": "number", "minimum": 0, "maximum": 1}
+      ],
+      "items": false
+    },
+    "rgb": {
+      "type": "array",
+      "prefixItems": [
+        {"type": "integer", "minimum": 0, "maximum": 255},
+        {"type": "integer", "minimum": 0, "maximum": 255},
+        {"type": "integer", "minimum": 0, "maximum": 255}
+      ],
+      "items": false
+    },
+    "xy": {
+      "type": "array",
+      "prefixItems": [{"type": "number"}, {"type": "number"}],
+      "items": false
+    },
+    "frame_window": {
+      "description": "Half-open [start, end_exclusive) frame window.",
+      "type": "array",
+      "prefixItems": [
+        {"type": "integer", "minimum": 0},
+        {"type": "integer", "minimum": 1}
+      ],
+      "items": false
+    },
+    "geometry": {
+      "description": "Uniform scale only. A single scalar makes per-word anisotropic resize structurally unrepresentable. Anisotropy is reachable only through named_exception, which must carry all five things AFFINE requires; see DOCTRINE.md rule 4.3.",
+      "type": "object",
+      "required": ["scale", "translate_xy"],
+      "properties": {
+        "scale": {"type": "number", "exclusiveMinimum": 0},
+        "translate_xy": {"$ref": "#/$defs/xy"},
+        "rotation_deg": {"type": "number"},
+        "named_exception": {"$ref": "#/$defs/named_exception"}
+      },
+      "additionalProperties": false
+    },
+    "named_exception": {
+      "description": "An evidence-backed per-state anisotropic fit. Geometry reproduction of the reference's own lockup, never font substitution, and never a grant of any font claim.",
+      "type": "object",
+      "required": [
+        "flag",
+        "axis",
+        "axis_scale",
+        "evidence_frames",
+        "measured_bbox_xyxy",
+        "clean_native_bbox_xyxy",
+        "justification"
+      ],
+      "properties": {
+        "flag": {"const": "reference_height_fit"},
+        "axis": {"enum": ["x", "y"]},
+        "axis_scale": {"type": "number", "exclusiveMinimum": 0},
+        "evidence_frames": {
+          "type": "array",
+          "minItems": 2,
+          "uniqueItems": true,
+          "items": {"type": "integer", "minimum": 0}
+        },
+        "measured_bbox_xyxy": {"$ref": "#/$defs/bbox_xyxy"},
+        "clean_native_bbox_xyxy": {"$ref": "#/$defs/bbox_xyxy"},
+        "justification": {"type": "string", "minLength": 60}
+      },
+      "additionalProperties": false
+    },
+    "ink": {
+      "description": "Ink is sampled from the reference's own pixels. There is no constant-colour branch.",
+      "type": "object",
+      "required": ["source", "sample", "rgb_median"],
+      "properties": {
+        "source": {"const": "sampled_reference_pixels"},
+        "sample": {
+          "type": "object",
+          "required": ["method", "frames", "roi_xyxy"],
+          "properties": {
+            "method": {
+              "enum": [
+                "min_channel_threshold",
+                "chromatic_difference",
+                "temporal_difference"
+              ]
+            },
+            "frames": {
+              "type": "array",
+              "minItems": 1,
+              "items": {"type": "integer", "minimum": 0}
+            },
+            "roi_xyxy": {"$ref": "#/$defs/bbox_xyxy"},
+            "threshold": {"type": "number"},
+            "interior_pixels": {"type": "integer", "minimum": 1},
+            "blank_frames": {
+              "type": "array",
+              "items": {"type": "integer", "minimum": 0}
+            }
+          },
+          "additionalProperties": false
+        },
+        "rgb_median": {"$ref": "#/$defs/rgb"},
+        "rgb_p05": {"$ref": "#/$defs/rgb"},
+        "rgb_p95": {"$ref": "#/$defs/rgb"},
+        "alpha_median": {"type": "integer", "minimum": 0, "maximum": 255}
+      },
+      "additionalProperties": false
+    },
+    "state": {
+      "type": "object",
+      "required": [
+        "id",
+        "start_frame",
+        "end_frame_exclusive",
+        "frames",
+        "text",
+        "lines",
+        "style_id",
+        "placement",
+        "geometry",
+        "ink",
+        "lifecycle",
+        "stacking",
+        "evidence"
+      ],
+      "properties": {
+        "id": {"type": "string", "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]{0,63}$"},
+        "start_frame": {"type": "integer", "minimum": 0},
+        "end_frame_exclusive": {"type": "integer", "minimum": 1},
+        "frames": {"type": "integer", "minimum": 1},
+        "start_s": {"type": "number", "minimum": 0},
+        "end_s": {"type": "number", "minimum": 0},
+        "text": {"type": "string", "minLength": 1},
+        "lines": {
+          "type": "array",
+          "minItems": 1,
+          "items": {"type": "string"}
+        },
+        "case": {"enum": ["as_written", "upper", "lower", "title"]},
+        "style_id": {"type": "string", "minLength": 1},
+        "placement": {
+          "description": "Two boxes, never one: the core 50%-alpha ink box and the low-alpha glow/shadow extent (DOCTRINE.md rule 4.5). A lone 'bbox_xyxy' is a placement envelope of unknown provenance and is not accepted.",
+          "type": "object",
+          "required": ["core_bbox_xyxy", "treatment_bbox_xyxy", "anchor"],
+          "properties": {
+            "core_bbox_xyxy": {"$ref": "#/$defs/bbox_xyxy"},
+            "treatment_bbox_xyxy": {"$ref": "#/$defs/bbox_xyxy"},
+            "normalized_core_xyxy": {"$ref": "#/$defs/normalized_xyxy"},
+            "optical_center_xy": {"$ref": "#/$defs/xy"},
+            "treatment_center_xy": {"$ref": "#/$defs/xy"},
+            "anchor": {
+              "enum": ["optical_center", "bbox_center", "top_left", "baseline_left"]
+            }
+          },
+          "additionalProperties": false
+        },
+        "geometry": {"$ref": "#/$defs/geometry"},
+        "ink": {"$ref": "#/$defs/ink"},
+        "lifecycle": {
+          "description": "Entry/hold/exit windows, all half-open like every other interval in this contract. The sealed regression_gates.motion table is expressed in inclusive windows, so an importer converts once and records that it did.",
+          "type": "object",
+          "required": ["kind"],
+          "properties": {
+            "kind": {
+              "enum": [
+                "static",
+                "hard_state",
+                "blink",
+                "build",
+                "write_on",
+                "blur_to_crisp",
+                "difference_ink",
+                "persistent"
+              ]
+            },
+            "note": {"type": "string"},
+            "first_detectable": {"type": "integer", "minimum": 0},
+            "first_crisp": {"type": "integer", "minimum": 0},
+            "readable_blur": {"$ref": "#/$defs/frame_window"},
+            "near_crisp": {"$ref": "#/$defs/frame_window"},
+            "hold": {"$ref": "#/$defs/frame_window"},
+            "exit_progressive_blur": {"$ref": "#/$defs/frame_window"},
+            "final_frame_residual": {"type": "boolean"},
+            "blur_radius_px": {"type": "number", "minimum": 0},
+            "per_frame_masks": {"type": "boolean"}
+          },
+          "additionalProperties": false
+        },
+        "stacking": {
+          "type": "object",
+          "required": ["z", "persists"],
+          "properties": {
+            "z": {"type": "integer", "minimum": 0},
+            "persists": {"type": "boolean"},
+            "composite_after_effects": {"type": "boolean"}
+          },
+          "additionalProperties": false
+        },
+        "evidence": {
+          "type": "object",
+          "required": ["tier", "mask_path", "mask_sha256"],
+          "properties": {
+            "tier": {
+              "enum": [
+                "INDEXED",
+                "MASK_VERIFIED",
+                "CONTOUR_VERIFIED",
+                "RENDER_CROP_VERIFIED"
+              ]
+            },
+            "mask_path": {"type": "string", "minLength": 1},
+            "mask_sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+            "crop_path": {"type": "string"},
+            "crop_sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"}
+          },
+          "additionalProperties": false
+        }
+      },
+      "additionalProperties": false
+    },
+    "style": {
+      "type": "object",
+      "required": ["render_path"],
+      "properties": {
+        "render_path": {"enum": ["source_contour", "native_font"]},
+        "visual_family": {"type": "string"},
+        "inherits": {"type": "string"},
+        "production_proof_rule": {"type": "string"}
+      },
+      "additionalProperties": false
+    },
+    "font_hypothesis": {
+      "type": "object",
+      "required": [
+        "style_id",
+        "family",
+        "full_name",
+        "path",
+        "face_index",
+        "sha256",
+        "identity_status"
+      ],
+      "properties": {
+        "style_id": {"type": "string", "minLength": 1},
+        "family": {"type": "string", "minLength": 1},
+        "full_name": {"type": "string", "minLength": 1},
+        "path": {"type": "string", "minLength": 1},
+        "face_index": {"type": "integer", "minimum": 0},
+        "sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+        "identity_status": {
+          "enum": ["HYPOTHESIS", "HOLDOUT_PROVEN", "ORIGINAL_ASSET_PROVEN"]
+        },
+        "holdout": {
+          "type": "object",
+          "required": [
+            "train_words",
+            "holdout_words",
+            "transform",
+            "per_metric",
+            "runner_up",
+            "identity_status",
+            "metrics_agreeing"
+          ],
+          "properties": {
+            "train_words": {"type": "array", "minItems": 1, "items": {"type": "string"}},
+            "holdout_words": {"type": "array", "minItems": 1, "items": {"type": "string"}},
+            "transform": {
+              "type": "object",
+              "required": ["scale"],
+              "properties": {"scale": {"type": "number", "exclusiveMinimum": 0}},
+              "additionalProperties": false
+            },
+            "per_metric": {"type": "object"},
+            "runner_up": {"type": "object"},
+            "identity_status": {"enum": ["HYPOTHESIS", "HOLDOUT_PROVEN"]},
+            "metrics_agreeing": {"type": "array", "items": {"type": "string"}},
+            "reason": {"type": "string"}
+          },
+          "additionalProperties": false
+        },
+        "original_asset_provenance": {
+          "type": "object",
+          "required": ["asset_origin", "evidence"],
+          "properties": {
+            "asset_origin": {"type": "string"},
+            "evidence": {"type": "string"}
+          },
+          "additionalProperties": false
+        }
+      },
+      "additionalProperties": false
+    }
+  },
+  "type": "object",
+  "required": [
+    "schema_version",
+    "artifact_type",
+    "status",
+    "render_allowed",
+    "reference",
+    "styles",
+    "states",
+    "font_hypotheses"
+  ],
+  "properties": {
+    "schema_version": {"const": 1},
+    "artifact_type": {"const": "caption_contract"},
+    "status": {"enum": ["DRAFT", "EXTRACTED", "SEALED"]},
+    "render_allowed": {"type": "boolean"},
+    "sealed": {
+      "type": "object",
+      "required": ["sealed_at_utc", "contract_sha256"],
+      "properties": {
+        "sealed_at_utc": {"type": "string"},
+        "contract_sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+        "supersedes": {"type": "string"}
+      },
+      "additionalProperties": false
+    },
+    "reference": {
+      "type": "object",
+      "required": [
+        "path",
+        "sha256",
+        "frame_count",
+        "fps",
+        "width",
+        "height",
+        "sample_aspect_ratio"
+      ],
+      "properties": {
+        "path": {"type": "string", "minLength": 1},
+        "sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+        "frame_count": {"type": "integer", "minimum": 1},
+        "fps": {"type": "string", "pattern": "^[0-9]+/[0-9]+$"},
+        "width": {"type": "integer", "minimum": 1},
+        "height": {"type": "integer", "minimum": 1},
+        "sample_aspect_ratio": {"type": "string", "minLength": 1},
+        "time_base": {"type": "string"}
+      },
+      "additionalProperties": false
+    },
+    "styles": {
+      "type": "object",
+      "minProperties": 1,
+      "additionalProperties": {"$ref": "#/$defs/style"}
+    },
+    "states": {
+      "type": "array",
+      "items": {"$ref": "#/$defs/state"}
+    },
+    "font_hypotheses": {
+      "type": "array",
+      "items": {"$ref": "#/$defs/font_hypothesis"}
+    },
+    "provenance": {
+      "type": "object",
+      "properties": {
+        "extractor_version": {"type": "string"},
+        "extracted_at_utc": {"type": "string"},
+        "reference_frames_root": {"type": "string"}
+      },
+      "additionalProperties": false
+    }
+  },
+  "additionalProperties": false
+}

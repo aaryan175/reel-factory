@@ -1,0 +1,59 @@
+#!/usr/bin/env python3
+"""deck-user — reviewer accounts for the Reel Deck.
+
+    deck-user add <name> [--admin]     create (or reset) an account; prints the password ONCE
+    deck-user rm <name>                remove it (its sessions die immediately)
+    deck-user list                     who exists, with roles
+
+Passwords are generated (never chosen), stored as scrypt hashes in config.json, shown
+once on stdout and nowhere else. Reviewers get the EDITOR role: they can watch, send
+verdicts (advisory), notes and answers; they never see factory-driving controls.
+"""
+from __future__ import annotations
+
+import argparse
+import json
+import secrets
+import sys
+from pathlib import Path
+
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
+from server import auth  # noqa: E402
+
+
+def main() -> int:
+    ap = argparse.ArgumentParser(prog="deck-user")
+    sub = ap.add_subparsers(dest="cmd", required=True)
+    a = sub.add_parser("add"); a.add_argument("name"); a.add_argument("--admin", action="store_true")
+    r = sub.add_parser("rm"); r.add_argument("name")
+    sub.add_parser("list")
+    args = ap.parse_args()
+
+    if args.cmd == "list":
+        for u in auth.list_users():
+            print(f"{u['username']:20s} {u['role']}")
+        return 0
+    if args.cmd == "add":
+        name = args.name.strip()
+        if not name or any(c.isspace() for c in name):
+            print("name must be one word", file=sys.stderr); return 2
+        password = "rv-" + secrets.token_urlsafe(10)
+        auth.set_credentials(name, password, auth.ROLE_OPERATOR if args.admin else auth.ROLE_EDITOR)
+        print(f"account : {name}  ({'OPERATOR' if args.admin else 'EDITOR'})")
+        print(f"password: {password}")
+        print("shown once — send it to the person now; it is not stored anywhere readable.")
+        return 0
+    if args.cmd == "rm":
+        config = json.loads(auth.CONFIG_PATH.read_text())
+        before = len(config.get("users") or [])
+        config["users"] = [u for u in config.get("users") or [] if u.get("username") != args.name]
+        if len(config["users"]) == before:
+            print(f"no account named {args.name}", file=sys.stderr); return 1
+        auth.CONFIG_PATH.write_text(json.dumps(config, indent=2))
+        print(f"removed {args.name}; any open session of theirs is now invalid")
+        return 0
+    return 2
+
+
+if __name__ == "__main__":
+    sys.exit(main())

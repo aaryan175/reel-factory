@@ -1,0 +1,104 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://local.reelctl/schemas/footage-index.schema.json",
+  "title": "complete authorized footage inventory",
+  "type": "object",
+  "required": [
+    "schema_version",
+    "status",
+    "root",
+    "expected_count",
+    "probed_count",
+    "passed_count",
+    "failed_count",
+    "missing_count",
+    "clip_count",
+    "unique_content_count",
+    "duplicate_groups",
+    "clips",
+    "failures",
+    "recipe_hash"
+  ],
+  "properties": {
+    "schema_version": {"const": 1},
+    "status": {"enum": ["PASS", "FAIL"]},
+    "root": {"type": "string", "minLength": 1},
+    "expected_count": {"type": "integer", "minimum": 0},
+    "probed_count": {"type": "integer", "minimum": 0},
+    "passed_count": {"type": "integer", "minimum": 0},
+    "failed_count": {"type": "integer", "minimum": 0},
+    "missing_count": {"type": "integer", "minimum": 0},
+    "clip_count": {"type": "integer", "minimum": 0},
+    "unique_content_count": {"type": "integer", "minimum": 0},
+    "duplicate_groups": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["sha256", "paths"],
+        "properties": {
+          "sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+          "paths": {"type": "array", "minItems": 2, "items": {"type": "string"}}
+        },
+        "additionalProperties": false
+      }
+    },
+    "clips": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "clip_id",
+          "path",
+          "relative_path",
+          "bytes",
+          "mtime_ns",
+          "sha256",
+          "duration_s",
+          "video",
+          "audio_present",
+          "input_profile",
+          "profile_status",
+          "independent_observation",
+          "status",
+          "thumbnails",
+          "thumbnail_receipts"
+        ],
+        "properties": {
+          "clip_id": {"type": "string", "pattern": "^[0-9a-f]{16}$"},
+          "path": {"type": "string"},
+          "relative_path": {"type": "string"},
+          "bytes": {"type": "integer", "minimum": 1},
+          "mtime_ns": {"type": "integer", "minimum": 0},
+          "sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+          "duration_s": {"type": "number", "minimum": 0},
+          "video": {"type": "object"},
+          "audio_present": {"type": "boolean"},
+          "input_profile": {"type": "string"},
+          "profile_status": {"type": "string"},
+          "independent_observation": {"type": "string"},
+          "status": {"const": "PASS"},
+          "thumbnails": {"type": "array", "minItems": 4, "maxItems": 4, "items": {"type": "string"}},
+          "thumbnail_receipts": {
+            "type": "array",
+            "minItems": 4,
+            "maxItems": 4,
+            "items": {
+              "type": "object",
+              "required": ["path", "sha256", "bytes"],
+              "properties": {
+                "path": {"type": "string"},
+                "sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+                "bytes": {"type": "integer", "minimum": 1}
+              },
+              "additionalProperties": false
+            }
+          }
+        },
+        "additionalProperties": false
+      }
+    },
+    "failures": {"type": "array", "items": {"type": "object"}},
+    "recipe_hash": {"type": "string", "pattern": "^[0-9a-f]{64}$"}
+  },
+  "additionalProperties": false
+}

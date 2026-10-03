@@ -1,0 +1,56 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://local.reelctl/schemas/judgment-visual-watch.schema.json",
+  "title": "headless judgment output: creative QC watch verdict",
+  "description": "The artifact a VISUAL_QC worker writes. The daemon binds it to the rendered candidate and then makes the `reelctl review record-agent` call itself; a PASS is only representable with all five inspection flags set.",
+  "type": "object",
+  "required": [
+    "schema_version",
+    "status",
+    "candidate_sha256",
+    "normal_speed_full_watch",
+    "reference_side_by_side_checked",
+    "typography_checked",
+    "color_checked",
+    "cut_and_beat_checked",
+    "notes"
+  ],
+  "properties": {
+    "schema_version": {"const": 1},
+    "status": {"enum": ["PASS", "FAIL"]},
+    "candidate_sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "normal_speed_full_watch": {"type": "boolean"},
+    "reference_side_by_side_checked": {"type": "boolean"},
+    "typography_checked": {"type": "boolean"},
+    "color_checked": {"type": "boolean"},
+    "cut_and_beat_checked": {"type": "boolean"},
+    "notes": {"type": "string", "minLength": 1},
+    "findings": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["block_id", "observation"],
+        "properties": {
+          "block_id": {"type": "string", "minLength": 1},
+          "observation": {"type": "string", "minLength": 1}
+        },
+        "additionalProperties": true
+      }
+    }
+  },
+  "allOf": [
+    {
+      "if": {"properties": {"status": {"const": "PASS"}}, "required": ["status"]},
+      "then": {
+        "properties": {
+          "normal_speed_full_watch": {"const": true},
+          "reference_side_by_side_checked": {"const": true},
+          "typography_checked": {"const": true},
+          "color_checked": {"const": true},
+          "cut_and_beat_checked": {"const": true}
+        }
+      }
+    }
+  ],
+  "additionalProperties": true
+}

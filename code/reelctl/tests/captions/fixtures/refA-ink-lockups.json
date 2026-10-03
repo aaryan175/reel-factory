@@ -1,0 +1,188 @@
+{
+ "schema_version": 1,
+ "artifact_type": "caption_ink_lockups",
+ "reel": "example-reel",
+ "authority": "Synthetic example spec: lockup grouping, per-layer plate/box/span and a measured reference ink per lockup. Real lockup specs are produced from an approved caption pass and are project data, not part of this repository.",
+ "reference_hold_frames": 4,
+ "lockups": [
+  {
+   "id": "G01",
+   "measured_rgb": [
+    250,
+    250,
+    250
+   ],
+   "members": [
+    {
+     "layer": "C01",
+     "plate": "C01.png",
+     "box_xy": [
+      480,
+      400
+     ],
+     "span": [
+      0,
+      30
+     ],
+     "states": [
+      "C01a",
+      "C01b"
+     ],
+     "text": "this is a sample caption"
+    }
+   ]
+  },
+  {
+   "id": "G02",
+   "measured_rgb": [
+    248,
+    250,
+    252
+   ],
+   "members": [
+    {
+     "layer": "C02",
+     "plate": "C02.png",
+     "box_xy": [
+      480,
+      400
+     ],
+     "span": [
+      30,
+      31
+     ],
+     "states": [
+      "C02"
+     ],
+     "text": "bright"
+    },
+    {
+     "layer": "C03",
+     "plate": "C03.png",
+     "box_xy": [
+      481,
+      401
+     ],
+     "span": [
+      32,
+      40
+     ],
+     "states": [
+      "C03"
+     ],
+     "text": "bright"
+    }
+   ]
+  },
+  {
+   "id": "G03",
+   "measured_rgb": [
+    252,
+    252,
+    252
+   ],
+   "members": [
+    {
+     "layer": "C04",
+     "plate": "C04.png",
+     "box_xy": [
+      480,
+      400
+     ],
+     "span": [
+      40,
+      52
+     ],
+     "states": [
+      "C04"
+     ],
+     "text": "example"
+    }
+   ]
+  },
+  {
+   "id": "G04",
+   "measured_rgb": [
+    138,
+    29,
+    36
+   ],
+   "members": [
+    {
+     "layer": "C05",
+     "plate": "C05.png",
+     "box_xy": [
+      480,
+      400
+     ],
+     "span": [
+      52,
+      64
+     ],
+     "states": [
+      "C05"
+     ],
+     "text": "red"
+    },
+    {
+     "layer": "C06",
+     "plate": "C06.png",
+     "box_xy": [
+      481,
+      401
+     ],
+     "span": [
+      58,
+      64
+     ],
+     "states": [
+      "C06"
+     ],
+     "text": "word"
+    }
+   ]
+  },
+  {
+   "id": "G05",
+   "measured_rgb": [
+    95,
+    83,
+    59
+   ],
+   "members": [
+    {
+     "layer": "C07",
+     "plate": "C07.png",
+     "box_xy": [
+      480,
+      400
+     ],
+     "span": [
+      64,
+      65
+     ],
+     "states": [
+      "C07"
+     ],
+     "text": "gold"
+    },
+    {
+     "layer": "C08",
+     "plate": "C08.png",
+     "box_xy": [
+      481,
+      401
+     ],
+     "span": [
+      66,
+      72
+     ],
+     "states": [
+      "C08"
+     ],
+     "text": "gold"
+    }
+   ]
+  }
+ ]
+}

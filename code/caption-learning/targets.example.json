@@ -1,0 +1,36 @@
+{
+  "targets": [
+    {
+      "key": "refA-main",
+      "label": "refA main delivery (approved control)",
+      "delivered": "~/reel-production/reel-refA-v1/deliver/refA-review.mp4",
+      "reference": "~/reel-production/reel-refA-v1/reference/reference-source.mp4",
+      "contract": "~/reel-production/reel-refA-v1/captions/contract-v001.json",
+      "w2_states": null,
+      "review_verdict": "APPROVED",
+      "note": "An approved control: a gate that fails this broadly is miscalibrated."
+    },
+    {
+      "key": "refB-main",
+      "label": "refB main delivery (rejected for caption ink)",
+      "delivered": "/Volumes/WORKDRIVE/workbench/refB-captions/refB-captioned.mp4",
+      "reference": "~/reel-production/reel-refB-v1/reference/reference-source.mp4",
+      "contract": "/Volumes/WORKDRIVE/workbench/refB-captions/contract.json",
+      "w1_states": ["C01", "C02", "C03"],
+      "w2_states": ["C01", "C02"],
+      "review_verdict": "REJECTED"
+    },
+    {
+      "key": "refC-main",
+      "label": "refC (no contract: synthesized from a build plan)",
+      "delivered": "~/reel-production/reel-refC-v1/deliver/refC-review.mp4",
+      "reference": "~/reel-production/reel-refC-v1/reference/reference-source.mp4",
+      "contract": {
+        "synth": "build_plan",
+        "build_plan": "~/reel-production/reel-refC-v1/build_plan.json",
+        "caption_states": "~/reel-production/reel-refC-v1/evidence/caption-states.json"
+      },
+      "review_verdict": "NOT_YET_REVIEWED"
+    }
+  ]
+}

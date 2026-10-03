@@ -1,0 +1,130 @@
+{% extends "base.html" %}
+{% from "_question.html" import question_card %}
+{% set active = 'board' %}
+{% block title %}Reel {{ '%02d' % d.seq }} — Reel Deck{% endblock %}
+{% block content %}
+
+<div class="pagehead" style="gap:20px; align-items:center;">
+  <h1 style="display:flex; align-items:center; gap:14px;">
+    <span style="font-size:44px; color:var(--amber);">{{ '%02d' % d.seq }}</span>
+    <span>{{ d.title }}</span>
+  </h1>
+  <span class="stamp big {{ d.color }}">{{ d.phrase }}</span>
+  <span class="sub mono">
+    {% if d.shortcode %}{{ d.shortcode }}{% endif %}
+    {% if d.reference_url %} · <a href="{{ d.reference_url }}" target="_blank" rel="noopener">reference ↗</a>{% endif %}
+    · <a href="/row/{{ d.seq }}/process"><b>PROCESS</b> — the whole build, every step</a>
+  </span>
+</div>
+
+<div id="walk-banner" class="notice info" hidden>
+  <span><b>TEST MODE</b> — this page was opened with <code>?walk=1</code>. Everything you send from here goes to the factory's plumbing-test lane: it gets picked up and acknowledged, but nothing is built and no verdict is recorded. Remove <code>?walk=1</code> from the address to review for real.</span>
+</div>
+
+
+
+<div class="review" id="review">
+  <div class="stage">
+    {% if not d.current and not d.batch.variants and d.working and not d.missing %}
+    <div class="notice info">
+      <span><b>{{ d.phrase }}.</b> The first cut appears here the moment the build finishes and passes its audit; nothing to watch until then. You do not need to do anything.{% if d.eta and d.eta.line %} Estimate: {{ d.eta.line }}.{% endif %}</span>
+    </div>
+    {% elif not d.current and not d.batch.variants %}
+    <div class="notice err">
+      <span><b>This cut isn't on this machine.</b>
+        {% if d.missing %}The factory names {{ d.missing|join(', ') }} but the file hasn't arrived here.{% endif %}
+        {% if d.batch_drive %}You can watch it on Drive instead.{% else %}There is nothing to watch yet — check back, or tell whoever runs the factory.{% endif %}</span>
+      {% if d.batch_drive %}<a class="btn small" href="{{ d.batch_drive.url }}" target="_blank" rel="noopener">Open on Drive ↗</a>{% endif %}
+    </div>
+    {% endif %}
+
+    <div class="stack" id="stack">
+      <div class="pills" id="version-pills"></div>
+      {% if d.reference.path %}<button class="pill ref" id="btn-reference" title="the original this reel copies">REFERENCE</button>{% endif %}
+      <span class="stack-spacer"></span>
+      <div class="status" id="status">
+        <button class="status-pill" id="status-pill" aria-haspopup="listbox" aria-expanded="false"><span class="dot"></span><span id="status-label" data-flash-label>Needs review</span> ▾</button>
+        <div class="status-menu" id="status-menu" role="listbox" hidden>
+          <button role="option" data-status="needs_review"><span class="dot s-needs_review"></span>Needs review<small>you haven't decided yet · only you see this</small></button>
+          <button role="option" data-status="in_progress"><span class="dot s-in_progress"></span>In progress<small>still watching, notes coming · only you see this</small></button>
+          <button role="option" data-status="needs_changes" id="btn-reject"><span class="dot s-needs_changes"></span>Needs changes<small>the factory redoes it from your comments</small></button>
+          <button role="option" data-status="approved" id="btn-approve"><span class="dot s-approved"></span>Approved<small>done — this cut is the one</small></button>
+        </div>
+      </div>
+    </div>
+
+    <div class="player-wrap">
+      <video id="player" preload="metadata" playsinline controls></video>
+      <div class="scrub" id="scrub-wrap">
+        <div class="markers" id="markers"></div>
+        <input type="range" id="scrub" min="0" max="1000" step="1" value="0" aria-label="scrub">
+      </div>
+      <div class="controls">
+        <button class="ctl" id="btn-prev" title="previous frame (←)">‹</button>
+        <button class="ctl play" id="btn-play" title="play / pause (space)">▶</button>
+        <button class="ctl" id="btn-next" title="next frame (→)">›</button>
+        <span class="tc" id="tc">0:00.000 · f0</span>
+        <span class="fname" id="fname">nothing loaded</span>
+        <button class="ctl" id="btn-loop" title="loop" aria-pressed="false">⟳</button>
+      </div>
+    </div>
+
+    {% if d.open_question %}<div class="qstrip row-q">{{ question_card(d.open_question) }}</div>{% endif %}
+
+    <div class="composer" id="composer">
+      <div class="answering-bar" id="answering" hidden>↩ Answering the factory's question (right) <button type="button" class="linkish" id="answering-off" title="leave a normal comment instead">✕</button></div>
+      <textarea id="comment-text" rows="2" placeholder="Leave a comment… (Enter to send · Shift+Enter for a new line). The video keeps playing; the note pins the frame showing when you send. Say it exactly like you would in chat."></textarea>
+      <div class="composer-bar">
+        <button class="chip on" id="tc-chip" aria-pressed="true" title="attach this comment to the paused frame — click to make it a general comment"><span class="chip-ic">⏱</span> <span id="tc-chip-label">0:00.000</span></button>
+        <label class="chip attach" title="attach a screenshot"><input type="file" id="comment-images" accept="image/png,image/jpeg" multiple hidden>📎 <span id="attach-count"></span></label>
+        <span style="flex:1"></span>
+        <button class="btn primary" id="btn-send-comment">Send</button>
+      </div>
+      {% if editor %}<p class="mono tiny">You review as an editor: your comments reach the factory as advice; the operator confirms before anything is final.</p>{% endif %}
+    </div>
+
+    {% if d.batch.variants %}
+    <details class="more" open id="variants">
+      <summary>Variants — {{ d.batch.note }}{% if d.batch.batch_stamp %} · batch {{ d.batch.batch_stamp }}{% endif %}</summary>
+      <p class="sub" style="margin:6px 0 10px;">Tap <b>Watch</b> to play one above. Mark Keep or Kill, and type what is wrong with any of them in its box. One Send delivers everything to the factory.</p>
+      <div class="variant-grid" id="variant-grid"></div>
+      <textarea id="batch-note" rows="2" placeholder="Note for the whole batch (optional)" style="width:100%; margin-top:10px;"></textarea>
+      <div class="rowline" style="margin-top:12px; display:flex; gap:10px; align-items:center;">
+        <button class="btn primary" id="btn-send-batch">Send to the factory</button>
+        {% if d.batch.card %}<a class="btn small" href="/media?p={{ d.batch.card | urlencode }}" target="_blank" rel="noopener">Batch card</a>{% endif %}
+        {% if d.batch_drive %}<a class="btn small" href="{{ d.batch_drive.url }}" target="_blank" rel="noopener">Drive ↗</a>{% endif %}
+      </div>
+    </details>
+    {% endif %}
+  </div>
+
+  <aside class="thread-panel" id="sends-panel">
+    <div class="thread-head">
+      <h3>Comments <span class="count" id="thread-count"></span></h3>
+      <button class="chip" id="sort-thread" data-sort="timecode" title="sort">by timecode</button>
+    </div>
+    <div class="factory-line mono" id="sends-factory"></div>
+    <div class="thread" id="thread"></div>
+    <details class="more">
+      <summary>Machine state {% if d.docs %}· cards &amp; docs{% endif %}</summary>
+      {% if d.live %}
+      <div class="live{% if not d.live.alive %} stale{% endif %}" style="margin:8px 0;">
+        <span class="dot"></span>
+        {% if d.live.alive %}LIVE — {% else %}STALLED — {% endif %}{{ d.live.role }} agent{% if d.live.model %} on {{ d.live.model }}{% endif %}
+        {% if d.live.action.tool %}<br>last action: {{ d.live.action.tool }}{% if d.live.action.detail %} · {{ d.live.action.detail }}{% endif %}{% endif %}
+        · heartbeat {% if d.live.age_s < 90 %}{{ d.live.age_s | int }}s{% else %}{{ (d.live.age_s / 60) | int }}m{% endif %} ago
+      </div>
+      {% endif %}
+      {% if d.eta %}<div class="eta" style="margin:8px 0;"><span class="est">EST</span>{{ d.eta.line }} — in {{ d.eta.phase_label }}, then {{ d.eta.remaining_phases | join(' → ') }}</div>{% endif %}
+      <span class="stamp grey token">{{ d.token }}</span>
+      <details class="raw"><summary>full state sentence</summary><pre>{{ d.state_sentence }}</pre></details>
+      {% if d.docs %}<div class="doclist" style="margin-top:10px;">{% for doc in d.docs %}<a href="/media?p={{ doc.path | urlencode }}" target="_blank" rel="noopener">{{ doc.name }}</a>{% endfor %}</div>{% endif %}
+      {% if d.batch_drive %}<a class="btn small" style="margin-top:8px; display:inline-block;" href="{{ d.batch_drive.url }}" target="_blank" rel="noopener">Open the batch on Drive ↗</a>{% endif %}
+    </details>
+  </aside>
+</div>
+
+<script id="row-data" type="application/json">{{ d | tojson }}</script>
+<script>window.DECK_USER = {{ (user.username if user else "you") | tojson }};</script>
+{% endblock %}
+{% block scripts %}<script src="/static/js/row.js?v=1"></script>{% endblock %}

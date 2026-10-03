@@ -1,0 +1,8 @@
+{
+ "autoCompactEnabled": true,
+ "autoCompactWindow": 350000,
+ "permissions": {
+  "defaultMode": "acceptEdits",
+  "allow": []
+ }
+}

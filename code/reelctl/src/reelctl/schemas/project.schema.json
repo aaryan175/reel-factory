@@ -1,0 +1,57 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://local.reelctl/schemas/project.schema.json",
+  "title": "reelctl project",
+  "type": "object",
+  "required": [
+    "schema_version",
+    "project_id",
+    "mode",
+    "reference_input",
+    "reference_path",
+    "footage_root",
+    "output",
+    "policies"
+  ],
+  "properties": {
+    "schema_version": {"const": 1},
+    "project_id": {"type": "string", "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]{0,63}$"},
+    "mode": {"enum": ["reference-locked", "original-montage"]},
+    "reference_input": {"type": "string", "minLength": 1},
+    "reference_path": {"type": ["string", "null"]},
+    "audio_track": {
+      "type": ["string", "null"],
+      "description": "Path (inside the project) of a licensed audio track the user holds rights to. Required by the default audio policy licensed_track_required."
+    },
+    "footage_root": {"type": "string", "minLength": 1},
+    "authorized_footage_root": {"type": "string", "minLength": 1},
+    "output": {
+      "type": "object",
+      "required": ["master_codec", "master_pix_fmt", "review_codec", "color"],
+      "properties": {
+        "master_codec": {"const": "prores_ks"},
+        "master_pix_fmt": {"const": "yuv422p10le"},
+        "review_codec": {"const": "libx264"},
+        "color": {"const": "bt709"}
+      },
+      "additionalProperties": false
+    },
+    "policies": {
+      "type": "object",
+      "required": ["audio", "timing", "typography", "speed", "color", "publication"],
+      "properties": {
+        "audio": {
+          "enum": ["licensed_track_required", "reference_audio_rights_held"],
+          "description": "licensed_track_required (default): mux the user-supplied licensed track and verify its payload and decoded PCM survive mux and review encode. reference_audio_rights_held: explicit opt-in to stream-copy the reference's own audio, ONLY if you hold the rights to it."
+        },
+        "timing": {"const": "exact_reference_pts_and_picture_blocks"},
+        "typography": {"const": "exact_font_hash_or_traced_reference_glyph"},
+        "speed": {"const": "normal_only_no_reverse"},
+        "color": {"const": "identified_input_profile_then_per_shot_grade"},
+        "publication": {"const": "human_approval_required"}
+      },
+      "additionalProperties": false
+    }
+  },
+  "additionalProperties": false
+}

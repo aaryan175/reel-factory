@@ -1,0 +1,86 @@
+{% extends "base.html" %}
+{% set active = 'help' %}
+{% block title %}How to review — Reel Deck{% endblock %}
+{% block content %}
+<div class="pagehead"><h1>How to review</h1></div>
+
+<section class="panelbox" id="howto-video" style="margin-bottom:16px;">
+  <h2>Watch it first — the whole system, 2½ minutes</h2>
+  <p>Narrated: signing in, the board, watching a cut, commenting on a frame, answering the factory, giving a verdict, and adding a new reel. Everything below is the same thing in writing.</p>
+  <video controls preload="metadata" playsinline style="width:100%; max-width:1100px; background:#000; border-radius:8px; border:1px solid var(--line, #333);" src="/media?p={{ howto_video | urlencode }}"></video>
+</section>
+
+<div class="helpgrid">
+  <section class="panelbox">
+    <h2>What this is</h2>
+    <p>Reels get made by a machine. You are the eyes. You watch a reel next to the reference it studies, and you tell the machine <b>yes</b>, <b>no</b>, or <b>here's what to change</b>. That's the whole job.</p>
+  </section>
+
+  {% if editor %}
+  <section class="panelbox">
+    <h2>Your role: editor</h2>
+    <p>You watch reels and leave notes. Your notes and your "needs changes" go to the factory exactly like anyone's, and the factory acts on notes. Your <b>approval is advice</b>: a reel is only final when the owner approves it, so an "approve" from you tells the owner you think it is ready, it does not release anything.</p>
+    <p>You will not see <b>Make</b>, <b>Now</b> or the <b>Nudge</b> button. Those belong to the owner's login, and you do not need them to review.</p>
+  </section>
+  {% endif %}
+  <section class="panelbox">
+    <h2>The board</h2>
+    <p><b>Needs you</b> — reels waiting for your verdict. Start here.<br>
+       <b>In the machine</b> — the factory has your note. Usually it is building or fixing. If the card says <b>QUEUED</b> it has the note but is waiting on something (disk space, a usage limit) and nothing is building yet; the card says what it is waiting for. Nothing for you to do either way.<br>
+       <b>Done</b> — approved or posted.<br>
+       <b>Parked</b> — set aside on purpose.</p>
+    <p>The count at the top is live. If "Needs you" is 0, you're finished for now.</p>
+    <p>A red <b>SENT · NOT PICKED UP YET</b> on a card, or a red "orders not picked up" note at the top, means a note was sent more than 5 minutes ago and the factory has not picked it up. That is a machine problem, not yours. Tell whoever runs it.</p>
+    <p><b>Older reels</b> at the bottom of the board is the archive: reels from earlier weeks. Some of them still say "New version ready" because nobody ever gave a verdict on them. They are not your queue and are not counted at the top. Leave them unless you were asked to look at one.</p>
+  </section>
+
+  <section class="panelbox">
+    <h2>Reviewing a reel</h2>
+    <ol>
+      <li>Tap a card in <b>Needs you</b>. It's one screen: the cut on the left, the comments thread on the right.</li>
+      <li>Watch. <b>V004</b> / <b>REFERENCE</b> pills switch between the cut and the original. Space plays and pauses, ← → step one frame.</li>
+      <li>Something wrong? <b>Pause on it, type in the one comment box, press Enter.</b> The ⏱ chip pins the comment to that exact frame (it's on by default). Tap the chip off for a comment about the whole cut. 📎 attaches a screenshot.</li>
+      <li>Decided? Set the <b>status pill</b> (top right of the player):
+        <ul>
+          <li><b>Approved</b> — this cut is the one. The factory marks it done.</li>
+          <li><b>Needs changes</b> — the factory redoes it from your comments. It needs a reason: your comments, or one line in the box.</li>
+          <li><b>In progress</b> / <b>Needs review</b> — just for you, nothing is sent.</li>
+        </ul>
+      </li>
+    </ol>
+  </section>
+
+  <section class="panelbox">
+    <h2>What happens after you send</h2>
+    <p>Send / the status pill flashes <b>SENT ✓</b>. Your comment appears in the thread at once, with its timecode and a marker on the scrub bar. Its state:</p>
+    <p><span class="stamp amber">○ waiting</span> the factory hasn't picked it up yet (normal for a few minutes).<br>
+       <span class="stamp green">✓ received</span> the factory has it and replied in the thread. <b>✓✓</b> means it finished that work.<br>
+       <span class="stamp red">! no answer</span> the factory has been quiet too long. Tell whoever runs it.</p>
+    <p>Click any ⏱ timecode in the thread and the player jumps there.</p>
+  </section>
+
+  <section class="panelbox">
+    <h2>When the factory asks you something</h2>
+    <p>An <b>amber card</b> at the top of the thread is the factory asking you a question. There is only one place to write: the comment box under the video. While a question is open the box turns amber and says <b>Answering the factory's question</b>, and what you type goes back as your answer. Press Enter. Tap the <b>✕</b> on that amber line to leave a normal comment instead.</p>
+    <p>Answer these first — until you do, that row waits. The factory checks about every 3 minutes, so give it a couple of minutes before you think it was ignored.</p>
+  </section>
+
+  {% if not editor %}
+  <section class="panelbox">
+    <h2>Adding a new reel</h2>
+    <p>Top of the page, <b>Make</b>. Paste the link of the reference reel you want to study/recreate (with permission), add a note if there is one ("recreate 1:1", "use the new footage"), press <b>Send to the factory</b>.</p>
+    <p>The factory registers it as a new row, studies the original, then builds a first cut. It shows up on the board under <b>In the machine</b>, and moves to <b>Needs you</b> when there is something to watch. First cuts take a while; you do not have to wait on the page.</p>
+  </section>
+
+  <section class="panelbox">
+    <h2>The Nudge button</h2>
+    <p>Top right, <b>Nudge the factory</b>. It tells the machine "carry on where you left off". Use it only if something has been sitting unanswered for a long time. It builds nothing by itself and can be pressed once every 10 minutes.</p>
+  </section>
+  {% endif %}
+
+  <section class="panelbox">
+    <h2>If something looks wrong</h2>
+    <p>A red message will tell you what to do. If a video won't play, the row will say the file is missing. If you're sent back to the sign-in page, your session expired — just sign in again; nothing you sent is lost. Anything else: tell whoever gave you your login.</p>
+  </section>
+</div>
+{% endblock %}

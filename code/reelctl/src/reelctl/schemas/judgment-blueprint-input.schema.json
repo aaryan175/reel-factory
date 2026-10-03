@@ -1,0 +1,45 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://local.reelctl/schemas/judgment-blueprint-input.schema.json",
+  "title": "headless judgment output: blueprint lock input",
+  "description": "What a BOOTSTRAP worker must write for the daemon to be able to run `reelctl blueprint lock` on its behalf. The worker never runs that command itself.",
+  "type": "object",
+  "required": [
+    "schema_version",
+    "status",
+    "project_id",
+    "all_frames_reviewed",
+    "boundaries_after",
+    "hard_cuts_after",
+    "observations"
+  ],
+  "properties": {
+    "schema_version": {"const": 1},
+    "status": {"const": "AUTHORED"},
+    "project_id": {"type": "string", "minLength": 1},
+    "reference_sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "all_frames_reviewed": {"type": "boolean"},
+    "boundaries_after": {"type": "array", "items": {"type": "integer", "minimum": 0}, "uniqueItems": true},
+    "hard_cuts_after": {"type": "array", "items": {"type": "integer", "minimum": 0}, "uniqueItems": true},
+    "observations": {
+      "type": "object",
+      "minProperties": 1,
+      "propertyNames": {"pattern": "^p[0-9]{3,}$"},
+      "additionalProperties": {
+        "type": "object",
+        "required": ["role", "description", "evidence_frames", "transition_from_previous"],
+        "properties": {
+          "role": {"type": "string", "minLength": 1},
+          "description": {"type": "string", "minLength": 1},
+          "evidence_frames": {"type": "array", "minItems": 1, "items": {"type": "integer", "minimum": 0}},
+          "transition_from_previous": {
+            "enum": ["opening", "hard_cut", "held_transition", "effect_state", "reframe", "other_picture_state"]
+          },
+          "boundary_evidence": {"type": "string"}
+        },
+        "additionalProperties": true
+      }
+    }
+  },
+  "additionalProperties": true
+}

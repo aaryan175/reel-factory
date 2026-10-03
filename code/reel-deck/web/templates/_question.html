@@ -1,0 +1,22 @@
+{# One factory question as a tappable card — used by the Board's QUESTIONS strip and the row page . #}
+{% macro question_card(q) %}
+<div class="qcard" data-row="{{ q.row }}" data-prefix="{{ q.ruling_prefix }}" data-call="{{ q.call_id }}">
+  <div class="q-head"><a class="q-row" href="/row/{{ q.row }}">Row {{ q.row }}</a> · <span class="q-text">{{ q.question_short }}</span></div>
+  {% if q.question_short != q.question or q.full != q.question %}
+  <details class="q-more"><summary>more</summary>
+    {% if q.question_short != q.question %}<p>{{ q.question }}</p>{% endif %}
+    <p class="q-full">The factory wrote: {{ q.full }}</p>
+  </details>
+  {% endif %}
+  {% if q.options %}
+  <div class="q-opts">
+    {% for o in q.options %}<button type="button" class="btn small q-opt" data-ruling="{{ o.ruling }}"><b>{{ o.n }}</b> — {{ o.label }}</button>{% endfor %}
+  </div>
+  {% endif %}
+  <div class="q-note-row">
+    <input class="q-note" type="text" maxlength="1000" aria-label="note to add to your answer" placeholder="{% if q.options %}Optional: add a note to the option you tap…{% else %}Type your answer…{% endif %}">
+    {% if not q.options %}<button type="button" class="btn small primary q-send">Send answer</button>{% endif %}
+  </div>
+  <div class="q-sent" hidden></div>
+</div>
+{% endmacro %}
